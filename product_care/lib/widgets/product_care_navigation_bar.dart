@@ -59,7 +59,7 @@ class ProductCareNavigationBar extends StatelessWidget {
     const aiPurple = Color(0xFF7C3AED);
     return Semantics(
       button: true,
-      label: tr(context, 'AI Scan'),
+      label: tr(context, 'Smart Scan'),
       child: InkWell(
         borderRadius: BorderRadius.circular(24),
         onTap: onAiScan,
@@ -94,7 +94,7 @@ class ProductCareNavigationBar extends StatelessWidget {
               ),
               const SizedBox(height: 3),
               Text(
-                tr(context, 'AI Scan'),
+                tr(context, 'Smart Scan'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(

@@ -21,14 +21,7 @@ class _AiProductScannerPageState extends State<AiProductScannerPage> {
   bool _isProcessing = false;
   String? _processingStatus;
 
-  @override
-  void initState() {
-    super.initState();
-    // Directly open camera when entering this screen
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _takePhoto();
-    });
-  }
+
 
   Future<void> _takePhoto() async {
     try {
@@ -164,14 +157,14 @@ class _AiProductScannerPageState extends State<AiProductScannerPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    tr(context, 'AI Product Scanner'),
+                    tr(context, 'Smart Scan'),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   Text(
-                    tr(context, 'Barcode + OCR on-device'),
+                    tr(context, 'Auto-detect expiry, weight & batch'),
                     style: TextStyle(
                       fontSize: 11,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -235,7 +228,7 @@ class _AiProductScannerPageState extends State<AiProductScannerPage> {
             child: _scannedItems.isEmpty
                 ? _buildEmptyState(context, aiColor)
                 : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
                     itemCount: _scannedItems.length,
                     separatorBuilder: (context, index) =>
                         const SizedBox(height: 12),
@@ -248,21 +241,45 @@ class _AiProductScannerPageState extends State<AiProductScannerPage> {
         ],
       ),
       // WhatsApp-style Bottom Action Bar with circular + button
-      bottomSheet: _scannedItems.isNotEmpty
-          ? Container(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: .08),
-                    blurRadius: 10,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                child: Row(
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .06),
+              blurRadius: 10,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: _scannedItems.isEmpty
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Material(
+                      color: const Color(0xFF25D366), // WhatsApp vibrant green
+                      shape: const CircleBorder(),
+                      elevation: 4,
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: _isProcessing ? null : _takePhoto,
+                        child: Container(
+                          width: 58,
+                          height: 58,
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.add_a_photo_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
                   children: [
                     // WhatsApp-style '+' Camera Button to snap more products
                     Material(
@@ -313,18 +330,8 @@ class _AiProductScannerPageState extends State<AiProductScannerPage> {
                     ),
                   ],
                 ),
-              ),
-            )
-          : null,
-      floatingActionButton: _scannedItems.isEmpty
-          ? FloatingActionButton.extended(
-              onPressed: _isProcessing ? null : _takePhoto,
-              backgroundColor: const Color(0xFF25D366),
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.camera_alt_rounded),
-              label: Text(tr(context, 'Open Camera')),
-            )
-          : null,
+        ),
+      ),
     );
   }
 
@@ -588,13 +595,13 @@ class _AiProductScannerPageState extends State<AiProductScannerPage> {
 
   Widget _buildEmptyState(BuildContext context, Color aiColor) => Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(28),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 86,
-                height: 86,
+                width: 90,
+                height: 90,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -608,49 +615,63 @@ class _AiProductScannerPageState extends State<AiProductScannerPage> {
                 ),
                 child: const Icon(
                   Icons.auto_awesome_rounded,
-                  size: 42,
+                  size: 44,
                   color: Color(0xFF7C3AED),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 20),
               Text(
-                tr(context, 'Smart Photo OCR Scanner'),
+                tr(context, 'Smart Scan'),
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                tr(
-                  context,
-                  'Take photos of products to auto-detect barcodes, expiry dates, weights and prices. Confirm multiple products at once.',
-                ),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  backgroundColor: aiColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF242728)
+                      : const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outlineVariant
+                        .withValues(alpha: .5),
                   ),
                 ),
-                onPressed: _isProcessing ? null : _takePhoto,
-                icon: const Icon(Icons.camera_alt_rounded),
-                label: Text(
-                  tr(context, 'Open Camera'),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF25D366).withValues(alpha: .15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.add_a_photo_rounded,
+                        color: Color(0xFF25D366),
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        tr(
+                          context,
+                          'Currently no product scanned. Use the + icon to scan your product.',
+                        ),
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

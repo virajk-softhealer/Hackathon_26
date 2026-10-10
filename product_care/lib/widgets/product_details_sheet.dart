@@ -297,11 +297,14 @@ class ProductDetailsSheet extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      '(${tr(context, 'tap date to change')})',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    Flexible(
+                      child: Text(
+                        '(${tr(context, 'tap date to change')})',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -347,11 +350,14 @@ class ProductDetailsSheet extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          '${batch.quantity} ${tr(context, product.unit)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
+                        Flexible(
+                          child: Text(
+                            '${batch.quantity} ${localizedUnit(context, product.unit)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const Spacer(),
@@ -479,7 +485,11 @@ class ProductDetailsSheet extends StatelessWidget {
                         onEdit();
                       },
                       icon: const Icon(Icons.edit_outlined),
-                      label: Text(tr(context, 'Edit details')),
+                      label: Text(
+                        tr(context, 'Edit details'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                   if (product.kind != ProductKind.service) ...[
@@ -491,7 +501,11 @@ class ProductDetailsSheet extends StatelessWidget {
                           onAddStock();
                         },
                         icon: const Icon(Icons.add_shopping_cart_rounded),
-                        label: Text(tr(context, 'Add stock')),
+                        label: Text(
+                          tr(context, 'Add stock'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
                   ],
@@ -507,7 +521,11 @@ class ProductDetailsSheet extends StatelessWidget {
                       onEdit();
                     },
                     icon: const Icon(Icons.autorenew_rounded),
-                    label: Text(tr(context, 'Renew service')),
+                    label: Text(
+                      tr(context, 'Renew service'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ],
@@ -522,7 +540,11 @@ class ProductDetailsSheet extends StatelessWidget {
                           onRestock();
                         },
                         icon: const Icon(Icons.shopping_bag_outlined),
-                        label: Text(tr(context, 'Restock')),
+                        label: Text(
+                          tr(context, 'Restock'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
                     if (product.quantity > 0) ...[
@@ -534,7 +556,11 @@ class ProductDetailsSheet extends StatelessWidget {
                             onRecordLoss();
                           },
                           icon: const Icon(Icons.remove_shopping_cart_outlined),
-                          label: Text(tr(context, 'Record loss')),
+                          label: Text(
+                            tr(context, 'Record loss'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
                     ],
@@ -583,11 +609,30 @@ class _DetailLine extends StatelessWidget {
     child: Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: brandGreen),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(icon, size: 18, color: brandGreen),
+          ),
           const SizedBox(width: 10),
-          Expanded(child: Text(label)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Expanded(
+            flex: 2,
+            child: Text(label),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 3,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                value,
+                textAlign: TextAlign.end,
+                softWrap: true,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
           if (trailing != null) ...[
             const SizedBox(width: 6),
             trailing!,

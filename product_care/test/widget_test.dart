@@ -392,14 +392,16 @@ void main() {
     expect(cost2, equals(45.0));
   });
 
-  test('AI Scan bottom bar translations match in Hindi and Gujarati', () {
+  test('Smart Scan bottom bar translations match in Hindi and Gujarati', () {
     final hi = ProductCareLocalizations(const Locale('hi'));
-    expect(hi.translate('AI Scan'), equals('एआई स्कैन'));
-    expect(hi.translate('AI Product Scanner'), equals('एआई उत्पाद स्कैनर'));
+    expect(hi.translate('Smart Scan'), equals('स्मार्ट स्कैन'));
+    expect(hi.translate('Currently no product scanned. Use the + icon to scan your product.'),
+        equals('वर्तमान में कोई उत्पाद स्कैन नहीं हुआ है। अपने उत्पाद को स्कैन करने के लिए + आइकन का उपयोग करें।'));
 
     final gu = ProductCareLocalizations(const Locale('gu'));
-    expect(gu.translate('AI Scan'), equals('એઆઈ સ્કેન'));
-    expect(gu.translate('AI Product Scanner'), equals('એઆઈ પ્રોડક્ટ સ્કેનર'));
+    expect(gu.translate('Smart Scan'), equals('સ્માર્ટ સ્કેન'));
+    expect(gu.translate('Currently no product scanned. Use the + icon to scan your product.'),
+        equals('હાલમાં કોઈ ઉત્પાદન સ્કેન કરેલ નથી. તમારા ઉત્પાદનને સ્કેન કરવા માટે + આયકનનો ઉપયોગ કરો.'));
   });
 
   test('AiOcrService correctly extracts Expiry Date, MRP, Batch, Weight from columnar packaging sample', () {

@@ -765,7 +765,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     _showMessage(
       tr(
         context,
-        '{count} draft products created via AI OCR scanner. Please verify them.',
+        '{count} draft products created via Smart Scan. Please verify them.',
         {'count': count},
       ),
     );

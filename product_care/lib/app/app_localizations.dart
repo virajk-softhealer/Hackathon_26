@@ -449,16 +449,21 @@ class ProductCareLocalizations {
           'ओपन फूड फैक्ट्स से उत्पाद विवरण और छवियां प्राप्त करने के लिए इंटरनेट कनेक्शन आवश्यक है। क्या आप ऑफ़लाइन स्कैन करना चाहते हैं या पुनः प्रयास करना चाहते हैं?',
       'Scan Offline': 'ऑफ़लाइन स्कैन करें',
       'Try Again': 'पुनः प्रयास करें',
-      'AI Scan': 'एआई स्कैन',
-      'AI Product Scanner': 'एआई उत्पाद स्कैनर',
+      'Smart Scan': 'स्मार्ट स्कैन',
+      'AI Scan': 'स्मार्ट स्कैन',
+      'AI Product Scanner': 'स्मार्ट स्कैनर',
       'Auto-detect expiry, weight & batch':
           'समाप्ति, वजन और बैच का स्वतः पता लगाएं',
+      'Currently no product scanned. Use the + icon to scan your product.':
+          'वर्तमान में कोई उत्पाद स्कैन नहीं हुआ है। अपने उत्पाद को स्कैन करने के लिए + आइकन का उपयोग करें।',
       'Take Photo': 'फोटो लें',
       'From Gallery': 'गैलरी से',
-      'Smart Photo OCR Scanner': 'स्मार्ट फोटो ओसीआर स्कैनर',
+      'Smart Photo OCR Scanner': 'स्मार्ट स्कैनर',
       'Confirm & Add ({count} products)': 'पुष्टि करें और जोड़ें ({count} उत्पाद)',
+      '{count} draft products created via Smart Scan. Please verify them.':
+          'स्मार्ट स्कैन से {count} ड्राफ्ट उत्पाद बनाए गए। कृपया उन्हें सत्यापित करें।',
       '{count} draft products created via AI OCR scanner. Please verify them.':
-          'एआई ओसीआर स्कैनर से {count} ड्राफ्ट उत्पाद बनाए गए। कृपया उन्हें सत्यापित करें।',
+          'स्मार्ट स्कैन से {count} ड्राफ्ट उत्पाद बनाए गए। कृपया उन्हें सत्यापित करें।',
     },
     'gu': {
       'Home': 'હોમ',
@@ -838,15 +843,20 @@ class ProductCareLocalizations {
           'ઓપન ફૂડ ફેક્ટ્સમાંથી ઉત્પાદનની વિગતો અને ફોટા મેળવવા માટે ઇન્ટરનેટ કનેક્શન જરૂરી છે. શું તમે ઑફલાઇન સ્કેન કરવા માંગો છો કે ફરી પ્રયાસ કરવો છે?',
       'Scan Offline': 'ઑફલાઇન સ્કેન કરો',
       'Try Again': 'ફરી પ્રયાસ કરો',
-      'AI Scan': 'એઆઈ સ્કેન',
-      'AI Product Scanner': 'એઆઈ પ્રોડક્ટ સ્કેનર',
+      'Smart Scan': 'સ્માર્ટ સ્કેન',
+      'AI Scan': 'સ્માર્ટ સ્કેન',
+      'AI Product Scanner': 'સ્માર્ટ સ્કેનર',
       'Auto-detect expiry, weight & batch': 'સમાપ્તિ, વજન અને બેચ આપોઆપ શોધો',
+      'Currently no product scanned. Use the + icon to scan your product.':
+          'હાલમાં કોઈ ઉત્પાદન સ્કેન કરેલ નથી. તમારા ઉત્પાદનને સ્કેન કરવા માટે + આયકનનો ઉપયોગ કરો.',
       'Take Photo': 'ફોટો પાડો',
       'From Gallery': 'ગેલેરીમાંથી',
-      'Smart Photo OCR Scanner': 'સ્માર્ટ ફોટો ઓસીઆર સ્કેનર',
+      'Smart Photo OCR Scanner': 'સ્માર્ટ સ્કેનર',
       'Confirm & Add ({count} products)': 'પુષ્ટિ કરો અને ઉમેરો ({count} ઉત્પાદનો)',
+      '{count} draft products created via Smart Scan. Please verify them.':
+          'સ્માર્ટ સ્કેનથી {count} ડ્રાફ્ટ ઉત્પાદનો બન્યા. કૃપા કરીને ચકાસો.',
       '{count} draft products created via AI OCR scanner. Please verify them.':
-          'એઆઈ ઓસીઆર સ્કેનરથી {count} ડ્રાફ્ટ ઉત્પાદનો બન્યા. કૃપા કરીને ચકાસો.',
+          'સ્માર્ટ સ્કેનથી {count} ડ્રાફ્ટ ઉત્પાદનો બન્યા. કૃપા કરીને ચકાસો.',
     },
   };
 }
