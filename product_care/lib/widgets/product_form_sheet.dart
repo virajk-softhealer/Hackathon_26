@@ -6,12 +6,12 @@ import '../models/product.dart';
 class ProductFormSheet extends StatefulWidget {
   const ProductFormSheet({
     this.product,
-    this.renewWarranty = false,
+    this.existingNames = const [],
     super.key,
   });
 
   final Product? product;
-  final bool renewWarranty;
+  final List<String> existingNames;
 
   @override
   State<ProductFormSheet> createState() => _ProductFormSheetState();
@@ -44,7 +44,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
   late String _selectedUnit;
   DateTime? _expiry;
   DateTime? _service;
-  DateTime? _warranty;
+  DateTime? _serviceEnd;
 
   String? _nameError;
   String? _quantityError;
@@ -85,8 +85,8 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     }
 
     _expiry = product?.expiry;
-    _service = product?.service;
-    _warranty = product?.warranty;
+    _service = product?.serviceStartDate;
+    _serviceEnd = product?.serviceEndDate;
   }
 
   @override
@@ -135,12 +135,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
           Text(
             tr(
               context,
-              widget.renewWarranty
-                  ? 'Renew warranty for {name}'
-                  : _isEditing
-                      ? 'Edit product'
-                      : 'Add a product',
-              {'name': widget.product?.name ?? ''},
+              _isEditing ? 'Edit product' : 'Add a product',
             ),
             style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
           ),
@@ -293,6 +288,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
           if (_kind == 'Storable') ...[
             const SizedBox(height: 10),
             _dateButton(
+              title: tr(context, 'Expiry date'),
               label: 'Choose expiry date',
               date: _expiry,
               onTap: () => _pickDate(
@@ -304,7 +300,8 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
           if (_kind == 'Service') ...[
             const SizedBox(height: 10),
             _dateButton(
-              label: 'Choose next service date',
+              title: tr(context, 'Service start'),
+              label: 'Choose service start date',
               date: _service,
               onTap: () => _pickDate(
                 _service,
@@ -313,22 +310,12 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
             ),
             const SizedBox(height: 8),
             _dateButton(
-              label: widget.renewWarranty
-                  ? 'Choose new warranty expiry date'
-                  : 'Choose warranty expiry date',
-              date: _warranty,
+              title: tr(context, 'Service end'),
+              label: 'Choose service end date',
+              date: _serviceEnd,
               onTap: () => _pickDate(
-                _warranty,
-                (date) => _warranty = date,
-              ),
-            ),
-            const SizedBox(height: 8),
-            _dateButton(
-              label: 'Choose expiration / contract end date',
-              date: _expiry,
-              onTap: () => _pickDate(
-                _expiry,
-                (date) => _expiry = date,
+                _serviceEnd,
+                (date) => _serviceEnd = date,
               ),
             ),
             const SizedBox(height: 10),
@@ -364,11 +351,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                   label: Text(
                     tr(
                       context,
-                      widget.renewWarranty
-                          ? 'Save warranty'
-                          : _isEditing
-                              ? 'Save changes'
-                              : 'Save product',
+                      _isEditing ? 'Save changes' : 'Save product',
                     ),
                   ),
                 ),
@@ -381,24 +364,42 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
   );
 
   Widget _dateButton({
+    required String title,
     required String label,
     required DateTime? date,
     required VoidCallback onTap,
   }) =>
-      SizedBox(
-        width: double.infinity,
-        child: OutlinedButton.icon(
-          onPressed: onTap,
-          icon: const Icon(Icons.event_outlined),
-          label: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              date == null
-                  ? tr(context, label)
-                  : localizedFullDate(context, date),
-              textAlign: TextAlign.left,
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
+            const SizedBox(height: 5),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onTap,
+                icon: const Icon(Icons.event_outlined),
+                label: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    date == null
+                        ? tr(context, label)
+                        : localizedFullDate(context, date),
+                    textAlign: TextAlign.left,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       );
 
@@ -418,9 +419,24 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
   void _save() {
     var hasError = false;
 
-    if (_name.text.trim().isEmpty) {
+    final trimmedName = _name.text.trim();
+    if (trimmedName.isEmpty) {
       setState(() => _nameError = tr(context, 'Product name is required.'));
       hasError = true;
+    } else {
+      final lowerName = trimmedName.toLowerCase();
+      final isDuplicate = widget.existingNames.any((existing) {
+        if (widget.product != null &&
+            widget.product!.name.trim().toLowerCase() == lowerName) {
+          return false;
+        }
+        return existing.trim().toLowerCase() == lowerName;
+      });
+      if (isDuplicate) {
+        setState(() => _nameError =
+            tr(context, 'A product with this name already exists.'));
+        hasError = true;
+      }
     }
 
     int? quantity;
@@ -466,20 +482,34 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     }
 
     final old = widget.product;
+    final batches = <ProductBatch>[];
+    if (kind == ProductKind.storable) {
+      if (old != null && old.batches.isNotEmpty) {
+        batches.addAll(old.batches);
+      } else if ((quantity ?? 0) > 0 || _expiry != null) {
+        batches.add(ProductBatch(
+          batchNumber: generateNextBatchNumber(_name.text.trim(), []),
+          quantity: quantity ?? 0,
+          expiry: _expiry,
+        ));
+      }
+    }
+
     Navigator.pop(
       context,
       Product(
         id: old?.id,
         name: _name.text.trim(),
-        brand: _brand.text.trim().isEmpty ? 'Unbranded' : _brand.text.trim(),
+        brand: _brand.text.trim(),
         category: _category,
         quantity: quantity ?? 0,
         unit: finalUnit,
-        expiry: _expiry,
+        expiry: kind == ProductKind.storable ? _expiry : null,
         service: kind == ProductKind.service ? _service : null,
-        warranty: kind == ProductKind.service ? _warranty : null,
+        serviceEnd: kind == ProductKind.service ? _serviceEnd : null,
         cost: cost,
         kind: kind,
+        batches: batches,
       ),
     );
   }

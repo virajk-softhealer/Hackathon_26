@@ -27,12 +27,12 @@ class _ReminderIntervalSheetState extends State<ReminderIntervalSheet> {
     final sorted = widget.reminderDays.toList()..sort();
     final existing = widget.reminderDays.length == 1
         ? widget.reminderDays.first
-        : widget.reminderDays.contains(3)
-        ? 3
+        : widget.reminderDays.contains(2)
+        ? 2
         : sorted.isEmpty
-        ? 3
+        ? 2
         : sorted.last;
-    _selected = existing >= 1 && existing <= 5 ? existing : 0;
+    _selected = const [1, 2, 5].contains(existing) ? existing : 0;
     _customDays = TextEditingController(
       text: _selected == 0 ? '$existing' : '',
     );
@@ -79,7 +79,7 @@ class _ReminderIntervalSheetState extends State<ReminderIntervalSheet> {
                 },
                 child: Column(
                   children: [
-                    for (final days in [1, 2, 3, 4, 5])
+                    for (final days in [1, 2, 5])
                       RadioListTile<int>(
                         value: days,
                         title: Text(

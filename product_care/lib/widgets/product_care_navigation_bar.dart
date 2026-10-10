@@ -18,7 +18,6 @@ class ProductCareNavigationBar extends StatelessWidget {
   static const _items = [
     (Icons.grid_view_rounded, 'Home', Color(0xFF278765)),
     (Icons.inventory_2_rounded, 'Products', Color(0xFF3E7BDB)),
-    (Icons.calendar_month_rounded, 'Calendar', Color(0xFF8B61CC)),
     (Icons.notifications_rounded, 'Alerts', Color(0xFFE28A37)),
     (Icons.tune_rounded, 'Settings', Color(0xFFDF6482)),
   ];
@@ -51,7 +50,6 @@ class ProductCareNavigationBar extends StatelessWidget {
           if (onScan != null) Expanded(child: _scanAction(context)),
           Expanded(child: _destination(context, 2)),
           Expanded(child: _destination(context, 3)),
-          Expanded(child: _destination(context, 4)),
         ],
       ),
     ),

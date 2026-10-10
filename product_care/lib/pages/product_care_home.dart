@@ -92,8 +92,8 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         onOpenExpiring: () => _openProductsWithFilter('Expiring'),
         onOpenInStock: () => _openProductsWithFilter('In stock'),
         onOpenLowStock: () => _openProductsWithFilter('Low stock'),
-        onOpenCalendar: () => _selectTab(2),
-        onOpenAlerts: () => _selectTab(3),
+        onOpenCalendar: _openCalendar,
+        onOpenAlerts: () => _selectTab(2),
         onOpenProduct: _openProduct,
         onAddProduct: _addProduct,
         onScan: _showScanInfo,
@@ -104,7 +104,6 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         initialFilter: _productFilter,
         onOpenProduct: _openProduct,
       ),
-      CalendarPage(products: _store.products, onOpenProduct: _openProduct),
       AlertsPage(
         products: _store.products,
         losses: _store.losses,
@@ -201,12 +200,33 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     _selectTab(1);
   }
 
+  void _openCalendar() {
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(
+            title: Text(tr(context, 'Calendar')),
+          ),
+          body: SafeArea(
+            child: CalendarPage(
+              products: _store.products,
+              onOpenProduct: _openProduct,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _addProduct() async {
     final product = await showModalBottomSheet<Product>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => const ProductFormSheet(),
+      builder: (_) => ProductFormSheet(
+        existingNames: _store.products.map((p) => p.name).toList(),
+      ),
     );
     if (product == null || !mounted) return;
     setState(() => _store.addProduct(product));
@@ -225,17 +245,14 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     );
   }
 
-  Future<void> _editProduct(
-    Product product, {
-    bool renewWarranty = false,
-  }) async {
+  Future<void> _editProduct(Product product) async {
     final edited = await showModalBottomSheet<Product>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (_) => ProductFormSheet(
         product: product,
-        renewWarranty: renewWarranty,
+        existingNames: _store.products.map((p) => p.name).toList(),
       ),
     );
     if (edited == null || !mounted) return;
@@ -256,8 +273,8 @@ class _ProductCareHomeState extends State<ProductCareHome> {
   }
 
   bool _hasReminderDate(Product product) =>
-      product.service != null ||
-      product.warranty != null ||
+      product.serviceStartDate != null ||
+      product.serviceEndDate != null ||
       (product.kind == ProductKind.storable &&
           product.quantity > 0 &&
           product.expiry != null);
@@ -271,7 +288,6 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         onRecordLoss: () => _recordLoss(product),
         onAddStock: () => _addStock(product),
         onEdit: () => _editProduct(product),
-        onRenewWarranty: () => _editProduct(product, renewWarranty: true),
         onRemove: () {
           setState(() => _store.products.remove(product));
           _persistStore();
@@ -284,22 +300,49 @@ class _ProductCareHomeState extends State<ProductCareHome> {
   }
 
   Future<void> _addStock(Product product) async {
-    final quantity = await showAddStockDialog(context, product);
-    if (quantity == null || !mounted) return;
-    product.quantity += quantity;
+    final result = await showAddStockDialog(context, product);
+    if (result == null || !mounted) return;
+    if (product.kind == ProductKind.storable) {
+      if (result.isNewBatch) {
+        product.batches.add(ProductBatch(
+          batchNumber: result.batchNumber,
+          quantity: result.quantity,
+          expiry: result.expiry,
+        ));
+      } else {
+        final existingBatch = product.batches.firstWhere(
+          (b) => b.batchNumber == result.batchNumber,
+          orElse: () {
+            final b = ProductBatch(
+              batchNumber: result.batchNumber,
+              quantity: 0,
+              expiry: result.expiry,
+            );
+            product.batches.add(b);
+            return b;
+          },
+        );
+        existingBatch.quantity += result.quantity;
+      }
+    } else {
+      product.quantity += result.quantity;
+    }
     setState(() {});
     await _persistStore();
     if (!mounted) return;
     await _rescheduleNotifications();
     if (!mounted) return;
+    final batchText =
+        product.kind == ProductKind.storable ? ' (${result.batchNumber})' : '';
     _showMessage(
       tr(
         context,
-        '{quantity} {unit} added to {name}. Total stock: {total}.',
+        '{quantity} {unit} added to {name}{batch}. Total stock: {total}.',
         {
-          'quantity': quantity,
+          'quantity': result.quantity,
           'unit': product.unit,
           'name': product.name,
+          'batch': batchText,
           'total': product.quantity,
         },
       ),
@@ -307,9 +350,13 @@ class _ProductCareHomeState extends State<ProductCareHome> {
   }
 
   Future<void> _recordLoss(Product product) async {
-    final quantity = await showRecordLossDialog(context, product);
-    if (quantity == null || !mounted) return;
-    final recorded = _store.recordLoss(product, quantity);
+    final result = await showRecordLossDialog(context, product);
+    if (result == null || !mounted) return;
+    final recorded = _store.recordLoss(
+      product,
+      result.quantity,
+      batchNumber: result.batchNumber,
+    );
     if (!recorded) {
       _showMessage(
         tr(context, 'Stock changed before the loss could be recorded.'),
@@ -326,7 +373,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         context,
         '{quantity} {unit} recorded as loss. Remaining stock: {remaining}.',
         {
-          'quantity': quantity,
+          'quantity': result.quantity,
           'unit': product.unit,
           'remaining': product.quantity,
         },
@@ -377,7 +424,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     _showMessage(
       sent
           ? tr(context, 'A test reminder was sent to your device.')
-          : tr(context, 'Add an expiry, warranty, or service date to test reminders.'),
+          : tr(context, 'Add an expiry or service date to test reminders.'),
     );
   }
 
@@ -494,7 +541,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
   void _openNotificationProduct(String productId) {
     final product = _store.products.where((entry) => entry.id == productId);
     if (product.isEmpty) {
-      _selectTab(3);
+      _selectTab(2);
       _showMessage(tr(context, 'This product is no longer available.'));
       return;
     }
@@ -621,21 +668,38 @@ class _ProductCareHomeState extends State<ProductCareHome> {
 
       if (selectedSource is _DeviceFileBackupSource) {
         final pickedFiles = await FilePicker.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['json'],
+          type: FileType.any,
         );
         if (pickedFiles.isEmpty || !mounted) return;
         final picked = pickedFiles.first;
         backupName = picked.name;
-        final bytes = await picked.readAsBytes();
-        if (bytes.isNotEmpty) {
-          final content = utf8.decode(bytes);
-          snapshot = _backupService.parseBackupString(content);
-        } else if (picked.path != null) {
-          snapshot = await _backupService.readBackup(File(picked.path!));
-        } else {
-          return;
+
+        String? content;
+        if (picked.path != null) {
+          try {
+            final f = File(picked.path!);
+            if (await f.exists()) {
+              content = await f.readAsString();
+            }
+          } catch (_) {}
         }
+        if (content == null || content.isEmpty) {
+          try {
+            final bytes = await picked.readAsBytes();
+            if (bytes.isNotEmpty) {
+              content = utf8.decode(bytes);
+            }
+          } catch (_) {}
+        }
+        if (content == null || content.isEmpty) {
+          try {
+            content = await picked.xFile.readAsString();
+          } catch (_) {}
+        }
+        if (content == null || content.trim().isEmpty) {
+          throw const FormatException('Could not read the selected backup file.');
+        }
+        snapshot = _backupService.parseBackupString(content);
       } else if (selectedSource is _LocalFileBackupSource) {
         backupName = _fileName(selectedSource.file);
         snapshot = await _backupService.readBackup(selectedSource.file);

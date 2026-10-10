@@ -25,8 +25,8 @@ class CalendarPage extends StatelessWidget {
             .where(
               (product) =>
                   product.expiry != null ||
-                  product.service != null ||
-                  product.warranty != null,
+                  product.serviceStartDate != null ||
+                  product.serviceEndDate != null,
             )
             .toList()
           ..sort((a, b) {
@@ -144,9 +144,11 @@ class CalendarPage extends StatelessWidget {
   }
 
   DateTime? _nextDate(Product product) {
-    final dates = [product.expiry, product.service, product.warranty]
-        .whereType<DateTime>()
-        .toList()
+    final dates = [
+      product.expiry,
+      product.serviceStartDate,
+      product.serviceEndDate,
+    ].whereType<DateTime>().toList()
       ..sort();
     return dates.isEmpty ? null : dates.first;
   }

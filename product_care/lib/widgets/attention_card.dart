@@ -12,9 +12,14 @@ class AttentionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final events = <(String, DateTime)>[
-      if (product.expiry != null) ('Expiry', product.expiry!),
-      if (product.service != null) ('Service', product.service!),
-      if (product.warranty != null) ('Warranty', product.warranty!),
+      if (product.kind != ProductKind.service && product.expiry != null)
+        ('Expiry', product.expiry!),
+      if (product.kind == ProductKind.service && product.serviceEndDate != null)
+        ('Service', product.serviceEndDate!),
+      if (product.kind == ProductKind.service &&
+          product.serviceEndDate == null &&
+          product.serviceStartDate != null)
+        ('Service', product.serviceStartDate!),
     ]..sort((left, right) => left.$2.compareTo(right.$2));
 
     if (events.isEmpty) {
@@ -80,7 +85,6 @@ class AttentionCard extends StatelessWidget {
     final eventType = events.first.$1;
     final date = events.first.$2;
     final isService = eventType == 'Service';
-    final isWarranty = eventType == 'Warranty';
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -91,9 +95,7 @@ class AttentionCard extends StatelessWidget {
         ? const Color(0xFFBA1A1A)
         : isService
             ? const Color(0xFF5469AA)
-            : isWarranty
-                ? const Color(0xFF278765)
-                : const Color(0xFFB56818);
+            : const Color(0xFFB56818);
 
     final statusText = days < 0
         ? '${tr(context, eventType)} · ${tr(context, isService ? 'Service expired' : 'Expired')}'
@@ -120,17 +122,13 @@ class AttentionCard extends StatelessWidget {
                       ? const Color(0xFFFFDAD6)
                       : isService
                           ? const Color(0xFFE7ECFA)
-                          : isWarranty
-                              ? const Color(0xFFE5F0E9)
-                              : const Color(0xFFFFEED8),
+                          : const Color(0xFFFFEED8),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
                   isService
                       ? Icons.build_outlined
-                      : isWarranty
-                          ? Icons.verified_user_outlined
-                          : Icons.schedule_rounded,
+                      : Icons.schedule_rounded,
                   color: accent,
                 ),
               ),

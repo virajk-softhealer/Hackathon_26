@@ -37,20 +37,21 @@ class BackupService {
     return files;
   }
 
-  Future<ProductCareSnapshot> readBackup(File file) async {
-    final decoded = jsonDecode(await file.readAsString());
-    if (decoded is! Map<String, dynamic>) {
-      throw const FormatException('The backup file is not valid JSON data.');
-    }
-    return ProductCareSnapshot.fromJson(decoded);
-  }
+  Future<ProductCareSnapshot> readBackup(File file) async =>
+      parseBackupString(await file.readAsString());
 
   ProductCareSnapshot parseBackupString(String content) {
     final decoded = jsonDecode(content);
-    if (decoded is! Map<String, dynamic>) {
-      throw const FormatException('The backup file is not valid JSON data.');
+    if (decoded is List) {
+      return ProductCareSnapshot.fromJson({'products': decoded});
     }
-    return ProductCareSnapshot.fromJson(decoded);
+    if (decoded is Map<String, dynamic>) {
+      return ProductCareSnapshot.fromJson(decoded);
+    }
+    if (decoded is Map) {
+      return ProductCareSnapshot.fromJson(Map<String, dynamic>.from(decoded));
+    }
+    throw const FormatException('The backup file is not valid JSON data.');
   }
 
   Future<Directory> _backupDirectory() async {

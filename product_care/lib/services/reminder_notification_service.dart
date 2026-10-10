@@ -250,11 +250,9 @@ class ReminderNotificationService {
         (product.kind != ProductKind.storable || product.quantity > 0)) {
       events.add(_ReminderEvent(ReminderType.expiry, product.expiry!));
     }
-    if (product.service != null) {
-      events.add(_ReminderEvent(ReminderType.service, product.service!));
-    }
-    if (product.warranty != null) {
-      events.add(_ReminderEvent(ReminderType.warranty, product.warranty!));
+    final serviceDate = product.serviceEndDate ?? product.serviceStartDate;
+    if (serviceDate != null) {
+      events.add(_ReminderEvent(ReminderType.service, serviceDate));
     }
     return events;
   }
@@ -324,15 +322,12 @@ class ReminderNotificationService {
     final source = switch (event.type) {
       ReminderType.expiry => 'Expiry Reminder: {name}',
       ReminderType.service => 'Service Reminder: {name}',
-      ReminderType.warranty => 'Warranty Reminder: {name}',
     };
     final baseTitle = language.translate(source, {'name': product.name});
     if (days < 0) {
       return event.type == ReminderType.service
           ? language.translate('Service Expired: {name}', {'name': product.name})
-          : event.type == ReminderType.warranty
-              ? language.translate('Warranty Expired: {name}', {'name': product.name})
-              : language.translate('Product Expired: {name}', {'name': product.name});
+          : language.translate('Product Expired: {name}', {'name': product.name});
     }
     if (days == 0) {
       return language.translate('Due today: {title}', {'title': baseTitle});
@@ -350,7 +345,6 @@ class ReminderNotificationService {
       final source = switch (event.type) {
         ReminderType.expiry => 'This product has expired. Review your stock.',
         ReminderType.service => 'This product service has expired and is overdue.',
-        ReminderType.warranty => 'This product warranty has expired.',
       };
       return language.translate(source, {'name': product.name});
     }
@@ -358,14 +352,12 @@ class ReminderNotificationService {
       final source = switch (event.type) {
         ReminderType.expiry => 'This product expires today. Review your stock.',
         ReminderType.service => 'This product is due for service today.',
-        ReminderType.warranty => 'This product warranty expires today.',
       };
       return language.translate(source, {'name': product.name});
     }
     final source = switch (event.type) {
       ReminderType.expiry => 'This product expires in {days} days. Review your stock.',
       ReminderType.service => 'This product requires service in {days} days.',
-      ReminderType.warranty => 'This product warranty expires in {days} days.',
     };
     return language.translate(source, {'name': product.name, 'days': days});
   }
@@ -378,7 +370,7 @@ class ReminderNotificationService {
           _channelId,
           language.translate('Product Care reminders'),
           channelDescription: language.translate(
-            'Expiry, service, and warranty reminders',
+            'Expiry and service reminders',
           ),
           importance: Importance.max,
           priority: Priority.high,
@@ -392,7 +384,7 @@ class ReminderNotificationService {
       );
 }
 
-enum ReminderType { expiry, service, warranty }
+enum ReminderType { expiry, service }
 
 class _ReminderEvent {
   const _ReminderEvent(this.type, this.date);

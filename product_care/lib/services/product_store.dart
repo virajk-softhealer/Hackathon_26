@@ -78,15 +78,43 @@ class ProductStore {
 
   void setLanguageCode(String code) => languageCode = code;
 
-  bool recordLoss(Product product, int quantity) {
+  bool recordLoss(Product product, int quantity, {String? batchNumber}) {
     if (product.kind == ProductKind.service ||
         quantity < 1 ||
         quantity > product.quantity) {
       return false;
     }
-    product.quantity -= quantity;
+    if (batchNumber != null && product.batches.isNotEmpty) {
+      final b =
+          product.batches.where((entry) => entry.batchNumber == batchNumber);
+      if (b.isNotEmpty && b.first.quantity >= quantity) {
+        b.first.quantity -= quantity;
+      } else {
+        var remaining = quantity;
+        for (final batch in product.batches) {
+          if (batch.quantity <= 0) continue;
+          final take =
+              remaining < batch.quantity ? remaining : batch.quantity;
+          batch.quantity -= take;
+          remaining -= take;
+          if (remaining <= 0) break;
+        }
+      }
+    } else if (product.batches.isNotEmpty) {
+      var remaining = quantity;
+      for (final batch in product.batches) {
+        if (batch.quantity <= 0) continue;
+        final take = remaining < batch.quantity ? remaining : batch.quantity;
+        batch.quantity -= take;
+        remaining -= take;
+        if (remaining <= 0) break;
+      }
+    } else {
+      product.quantity -= quantity;
+    }
+    final batchInfo = batchNumber != null ? ' ($batchNumber)' : '';
     losses.add(
-      '${product.name} · $quantity ${product.unit} · ${DateTime.now().toIso8601String().substring(0, 10)}',
+      '${product.name}$batchInfo · $quantity ${product.unit} · ${DateTime.now().toIso8601String().substring(0, 10)}',
     );
     return true;
   }
@@ -168,41 +196,56 @@ class ProductCareSnapshot {
   final Set<String> notificationKeys;
 
   factory ProductCareSnapshot.fromJson(Map<String, dynamic> json) {
-    if (json['format'] != ProductStore.backupFormat ||
-        json['version'] != ProductStore.schemaVersion) {
+    if (json.containsKey('format') &&
+        json['format'] != ProductStore.backupFormat) {
       throw const FormatException('This backup format is not supported.');
     }
-    final rawProducts = json['products'];
-    final rawLosses = json['losses'];
-    final rawReminderDays = json['reminder_days'];
-    final rawLanguageCode = json['language_code'] ?? 'en';
-    final rawNotificationKeys = json['notification_keys'] ?? <dynamic>[];
-    if (rawProducts is! List ||
-        rawLosses is! List ||
-        rawReminderDays is! List ||
-        rawNotificationKeys is! List ||
-        rawLanguageCode is! String ||
-        !const {'en', 'hi', 'gu'}.contains(rawLanguageCode)) {
+    final rawProducts = json['products'] ?? json['items'];
+    if (rawProducts is! List) {
       throw const FormatException('The backup is missing required data.');
     }
-    final products = rawProducts.map((record) {
-      if (record is! Map<String, dynamic>) {
-        throw const FormatException(
-          'A product record in the backup is invalid.',
-        );
+    final rawLosses = json['losses'] is List ? json['losses'] as List : const [];
+    final rawReminderDays = json['reminder_days'] is List
+        ? json['reminder_days'] as List
+        : const [3];
+    final candidateLang = (json['language_code'] ?? 'en').toString();
+    final rawLanguageCode = const {'en', 'hi', 'gu'}.contains(candidateLang)
+        ? candidateLang
+        : 'en';
+    final rawNotificationKeys = json['notification_keys'] is List
+        ? json['notification_keys'] as List
+        : const [];
+
+    final products = <Product>[];
+    for (final record in rawProducts) {
+      if (record is Map<String, dynamic>) {
+        products.add(Product.fromJson(record));
+      } else if (record is Map) {
+        products.add(Product.fromJson(Map<String, Object?>.from(record)));
       }
-      return Product.fromJson(record);
-    }).toList();
-    if (rawLosses.any((entry) => entry is! String) ||
-        rawNotificationKeys.any((entry) => entry is! String) ||
-        rawReminderDays.any(
-          (entry) => entry is! int || entry < 1 || entry > 365,
-        )) {
-      throw const FormatException(
-        'The backup contains invalid settings or history.',
-      );
     }
-    final decodedReminderDays = rawReminderDays.cast<int>().toSet();
+
+    final losses = <String>[];
+    for (final entry in rawLosses) {
+      if (entry != null) losses.add(entry.toString());
+    }
+
+    final notificationKeys = <String>{};
+    for (final entry in rawNotificationKeys) {
+      if (entry != null) notificationKeys.add(entry.toString());
+    }
+
+    final decodedReminderDays = <int>{};
+    for (final entry in rawReminderDays) {
+      if (entry is int && entry >= 1 && entry <= 365) {
+        decodedReminderDays.add(entry);
+      } else if (entry != null) {
+        final parsed = int.tryParse(entry.toString());
+        if (parsed != null && parsed >= 1 && parsed <= 365) {
+          decodedReminderDays.add(parsed);
+        }
+      }
+    }
     final normalizedReminderDays = decodedReminderDays.isEmpty
         ? {3}
         : decodedReminderDays.length == 1
@@ -212,12 +255,13 @@ class ProductCareSnapshot {
                 ? 3
                 : decodedReminderDays.reduce((a, b) => a > b ? a : b),
           };
+
     return ProductCareSnapshot(
       products: products,
-      losses: rawLosses.cast<String>(),
+      losses: losses,
       reminderDays: normalizedReminderDays,
       languageCode: rawLanguageCode,
-      notificationKeys: rawNotificationKeys.cast<String>().toSet(),
+      notificationKeys: notificationKeys,
     );
   }
 

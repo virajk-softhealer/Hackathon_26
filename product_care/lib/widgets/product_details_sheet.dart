@@ -13,7 +13,6 @@ class ProductDetailsSheet extends StatelessWidget {
     required this.onRemove,
     required this.onRestock,
     required this.onEdit,
-    required this.onRenewWarranty,
     super.key,
   });
 
@@ -23,7 +22,6 @@ class ProductDetailsSheet extends StatelessWidget {
   final VoidCallback onRemove;
   final VoidCallback onRestock;
   final VoidCallback onEdit;
-  final VoidCallback onRenewWarranty;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -68,7 +66,10 @@ class ProductDetailsSheet extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${product.brand == 'Unbranded' ? tr(context, 'Unbranded') : product.brand} · ${tr(context, product.category)}',
+                    product.brand.trim().isEmpty ||
+                            product.brand.trim().toLowerCase() == 'unbranded'
+                        ? tr(context, product.category)
+                        : '${product.brand} · ${tr(context, product.category)}',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -87,25 +88,102 @@ class ProductDetailsSheet extends StatelessWidget {
                 ? tr(context, 'Out of stock')
                 : '${product.quantity} ${tr(context, product.unit)}',
           ),
-        if (product.expiry != null &&
-            (product.kind == ProductKind.service || product.quantity > 0))
+        if (product.kind != ProductKind.service &&
+            product.quantity > 0 &&
+            product.expiry != null)
           _DetailLine(
             icon: Icons.event_outlined,
-            label: tr(context, 'Best before'),
+            label: tr(context, 'Expiry date'),
             value: localizedFullDate(context, product.expiry!),
           ),
-        if (product.service != null)
+        if (product.kind == ProductKind.service &&
+            product.serviceStartDate != null)
           _DetailLine(
-            icon: Icons.build_outlined,
-            label: tr(context, 'Next service'),
-            value: localizedFullDate(context, product.service!),
+            icon: Icons.calendar_today_outlined,
+            label: tr(context, 'Service start'),
+            value: localizedFullDate(context, product.serviceStartDate!),
           ),
-        if (product.warranty != null)
+        if (product.kind == ProductKind.service &&
+            product.serviceEndDate != null)
           _DetailLine(
-            icon: Icons.verified_user_outlined,
-            label: tr(context, 'Warranty expires'),
-            value: localizedFullDate(context, product.warranty!),
+            icon: Icons.event_available_outlined,
+            label: tr(context, 'Service end'),
+            value: localizedFullDate(context, product.serviceEndDate!),
           ),
+        if (product.kind == ProductKind.storable &&
+            product.batches.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              tr(context, 'Batches'),
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            ),
+          ),
+          const SizedBox(height: 6),
+          ...product.batches.map((batch) {
+            final days = batch.daysToExpiry;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainerHighest
+                    .withValues(alpha: .35),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outlineVariant
+                      .withValues(alpha: .5),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: brandGreen.withValues(alpha: .12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      batch.batchNumber,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        color: brandGreen,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${batch.quantity} ${tr(context, product.unit)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (batch.expiry != null)
+                    Text(
+                      days != null && days < 0
+                          ? tr(context, 'Expired')
+                          : localizedFullDate(context, batch.expiry!),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: days != null && days <= 3
+                            ? const Color(0xFFC04434)
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            );
+          }),
+        ],
         const SizedBox(height: 12),
         Row(
           children: [
@@ -141,10 +219,10 @@ class ProductDetailsSheet extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: () {
                 Navigator.pop(context);
-                onRenewWarranty();
+                onEdit();
               },
               icon: const Icon(Icons.autorenew_rounded),
-              label: Text(tr(context, 'Renew warranty')),
+              label: Text(tr(context, 'Renew service')),
             ),
           ),
         ],

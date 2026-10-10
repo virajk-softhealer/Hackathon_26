@@ -121,10 +121,9 @@ class AlertsPage extends StatelessWidget {
       }
     }
 
-    add('Service', product.service);
-    add('Warranty', product.warranty);
-    if (product.expiry != null &&
-        (product.kind != ProductKind.storable || product.quantity > 0)) {
+    if (product.kind == ProductKind.service) {
+      add('Service', product.serviceEndDate ?? product.serviceStartDate);
+    } else if (product.expiry != null && product.quantity > 0) {
       add('Expiry', product.expiry);
     }
     return entries;
@@ -164,23 +163,18 @@ class _ReminderAlert extends StatelessWidget {
     final product = reminder.product;
     final kind = reminder.kind;
     final isService = kind == 'Service';
-    final isWarranty = kind == 'Warranty';
     final isPast = reminder.days < 0;
 
     final color = isPast
         ? const Color(0xFFBA1A1A)
         : isService
             ? const Color(0xFF5469AA)
-            : isWarranty
-                ? const Color(0xFF278765)
-                : const Color(0xFFB56818);
+            : const Color(0xFFB56818);
 
     final title = isPast
         ? (isService
             ? tr(context, 'Service Expired: {name}', {'name': product.name})
-            : isWarranty
-                ? tr(context, 'Warranty Expired: {name}', {'name': product.name})
-                : tr(context, 'Product Expired: {name}', {'name': product.name}))
+            : tr(context, 'Product Expired: {name}', {'name': product.name}))
         : tr(context, '{type} reminder: {name}', {
             'type': tr(context, kind),
             'name': product.name,
@@ -198,17 +192,13 @@ class _ReminderAlert extends StatelessWidget {
                 ? const Color(0xFFFFDAD6)
                 : isService
                     ? const Color(0xFFE7ECFA)
-                    : isWarranty
-                        ? const Color(0xFFE5F0E9)
-                        : const Color(0xFFFFEED8),
+                    : const Color(0xFFFFEED8),
             borderRadius: BorderRadius.circular(13),
           ),
           child: Icon(
             isService
                 ? Icons.build_outlined
-                : isWarranty
-                    ? Icons.verified_user_outlined
-                    : Icons.hourglass_bottom_rounded,
+                : Icons.hourglass_bottom_rounded,
             color: color,
           ),
         ),
@@ -244,16 +234,6 @@ class _ReminderAlert extends StatelessWidget {
               'name': name,
               'days': reminder.days,
             });
-    }
-    if (reminder.kind == 'Warranty') {
-      return reminder.days < 0
-          ? tr(context, 'Warranty for {name} has expired.', {'name': name})
-          : reminder.days == 0
-              ? tr(context, 'Warranty for {name} expires today.', {'name': name})
-              : tr(context, 'Warranty for {name} expires in {days} days.', {
-                  'name': name,
-                  'days': reminder.days,
-                });
     }
     return reminder.days < 0
         ? tr(context, '{name} has expired. Review the product details.', {'name': name})

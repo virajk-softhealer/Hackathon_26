@@ -47,14 +47,12 @@ class DashboardPage extends StatelessWidget {
           product.quantity > 0 &&
           product.daysToExpiry != null &&
           product.daysToExpiry! <= 7;
+      final serviceDate = product.serviceEndDate ?? product.serviceStartDate;
       final serviceNeedsAttention =
-          product.service != null &&
-          product.service!.difference(DateTime.now()).inDays <= 14;
-      final warrantyNeedsAttention = product.warranty != null &&
-          product.warranty!.difference(DateTime.now()).inDays <= 14;
+          serviceDate != null &&
+          serviceDate.difference(DateTime.now()).inDays <= 14;
       return expiryNeedsAttention ||
           serviceNeedsAttention ||
-          warrantyNeedsAttention ||
           (product.kind != ProductKind.service && product.quantity == 0);
     }).toList();
     return CustomScrollView(
@@ -227,7 +225,12 @@ class DashboardPage extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(width: 10),
+        IconButton(
+          onPressed: onOpenCalendar,
+          icon: const Icon(Icons.calendar_month_outlined),
+          tooltip: tr(context, 'Calendar'),
+        ),
+        const SizedBox(width: 4),
         ClipRRect(
           borderRadius: BorderRadius.circular(15),
           child: Image.asset(
