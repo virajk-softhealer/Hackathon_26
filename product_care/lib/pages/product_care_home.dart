@@ -666,7 +666,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
           content: Text(
             tr(
               ctx,
-              'No Internet Connection, Use Manual Offline or connect to internet to fetch product details.',
+              'No Internet Connection, Use with Limited Feature or connect to internet to fetch product details.',
             ),
           ),
           actions: [
@@ -676,7 +676,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
             ),
             FilledButton.tonal(
               onPressed: () => Navigator.pop(ctx, 'offline'),
-              child: Text(tr(ctx, 'Use Manual Offline')),
+              child: Text(tr(ctx, 'Use with Limited Feature')),
             ),
             FilledButton.icon(
               icon: const Icon(Icons.refresh_rounded, size: 16),

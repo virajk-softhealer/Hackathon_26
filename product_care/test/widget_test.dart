@@ -534,25 +534,25 @@ void main() {
     expect(guUnitMsg, equals('ઉપલબ્ધ: 1 એકમ'));
   });
 
-  test('AI Scan offline internet connection prompt strings translate accurately', () {
+  test('Smart Scan offline internet connection prompt strings translate accurately', () {
     final hi = ProductCareLocalizations(const Locale('hi'));
     final gu = ProductCareLocalizations(const Locale('gu'));
 
     expect(
-      hi.translate('No Internet Connection, Use Manual Offline'),
-      equals('कोई इंटरनेट कनेक्शन नहीं, ऑफ़लाइन मैन्युअल उपयोग करें'),
+      hi.translate('No Internet Connection, Use with Limited Feature'),
+      equals('कोई इंटरनेट कनेक्शन नहीं, सीमित सुविधाओं के साथ उपयोग करें'),
     );
     expect(
-      gu.translate('No Internet Connection, Use Manual Offline'),
-      equals('ઇન્ટરનેટ કનેક્શન નથી, ઑફલાઇન મેન્યુઅલ વાપરો'),
+      gu.translate('No Internet Connection, Use with Limited Feature'),
+      equals('ઇન્ટરનેટ કનેક્શન નથી, મર્યાદિત સુવિધાઓ સાથે વાપરો'),
     );
     expect(
-      hi.translate('Use Manual Offline'),
-      equals('ऑफ़लाइन मैन्युअल उपयोग करें'),
+      hi.translate('Use with Limited Feature'),
+      equals('सीमित सुविधाओं के साथ उपयोग करें'),
     );
     expect(
-      gu.translate('Use Manual Offline'),
-      equals('ઑફલાઇન મેન્યુઅલ વાપરો'),
+      gu.translate('Use with Limited Feature'),
+      equals('મર્યાદિત સુવિધાઓ સાથે વાપરો'),
     );
   });
 }

@@ -440,6 +440,11 @@ class ProductCareLocalizations {
       'Packaging': 'पैकेजिंग',
       'Origin': 'उत्पत्ति स्थान',
       'No Internet Connection': 'कोई इंटरनेट कनेक्शन नहीं',
+      'No Internet Connection, Use with Limited Feature or connect to internet to fetch product details.':
+          'कोई इंटरनेट कनेक्शन नहीं, सीमित सुविधाओं के साथ उपयोग करें या उत्पाद विवरण प्राप्त करने के लिए इंटरनेट से कनेक्ट करें।',
+      'No Internet Connection, Use with Limited Feature':
+          'कोई इंटरनेट कनेक्शन नहीं, सीमित सुविधाओं के साथ उपयोग करें',
+      'Use with Limited Feature': 'सीमित सुविधाओं के साथ उपयोग करें',
       'No Internet Connection, Use Manual Offline or connect to internet to fetch product details.':
           'कोई इंटरनेट कनेक्शन नहीं, ऑफ़लाइन मैन्युअल उपयोग करें या उत्पाद विवरण प्राप्त करने के लिए इंटरनेट से कनेक्ट करें।',
       'No Internet Connection, Use Manual Offline':
@@ -834,6 +839,11 @@ class ProductCareLocalizations {
       'Packaging': 'પેકેજિંગ',
       'Origin': 'ઉત્પત્તિ સ્થાન',
       'No Internet Connection': 'ઇન્ટરનેટ કનેક્શન નથી',
+      'No Internet Connection, Use with Limited Feature or connect to internet to fetch product details.':
+          'ઇન્ટરનેટ કનેક્શન નથી, મર્યાદિત સુવિધાઓ સાથે વાપરો અથવા ઉત્પાદન વિગતો મેળવવા ઇન્ટરનેટથી કનેક્ટ કરો.',
+      'No Internet Connection, Use with Limited Feature':
+          'ઇન્ટરનેટ કનેક્શન નથી, મર્યાદિત સુવિધાઓ સાથે વાપરો',
+      'Use with Limited Feature': 'મર્યાદિત સુવિધાઓ સાથે વાપરો',
       'No Internet Connection, Use Manual Offline or connect to internet to fetch product details.':
           'ઇન્ટરનેટ કનેક્શન નથી, ઑફલાઇન મેન્યુઅલ વાપરો અથવા ઉત્પાદન વિગતો મેળવવા ઇન્ટરનેટથી કનેક્ટ કરો.',
       'No Internet Connection, Use Manual Offline':
