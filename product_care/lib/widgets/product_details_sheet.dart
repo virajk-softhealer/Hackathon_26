@@ -11,6 +11,8 @@ class ProductDetailsSheet extends StatelessWidget {
     required this.onRecordLoss,
     required this.onRemove,
     required this.onRestock,
+    required this.onEdit,
+    required this.onRenewWarranty,
     super.key,
   });
 
@@ -18,6 +20,8 @@ class ProductDetailsSheet extends StatelessWidget {
   final VoidCallback onRecordLoss;
   final VoidCallback onRemove;
   final VoidCallback onRestock;
+  final VoidCallback onEdit;
+  final VoidCallback onRenewWarranty;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -53,7 +57,7 @@ class ProductDetailsSheet extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${product.brand} · ${tr(context, product.category)}',
+                    '${product.brand == 'Unbranded' ? tr(context, 'Unbranded') : product.brand} · ${tr(context, product.category)}',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -82,6 +86,37 @@ class ProductDetailsSheet extends StatelessWidget {
             label: tr(context, 'Next service'),
             value: localizedFullDate(context, product.service!),
           ),
+        if (product.warranty != null)
+          _DetailLine(
+            icon: Icons.verified_user_outlined,
+            label: tr(context, 'Warranty expires'),
+            value: localizedFullDate(context, product.warranty!),
+          ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              onEdit();
+            },
+            icon: const Icon(Icons.edit_outlined),
+            label: Text(tr(context, 'Edit details')),
+          ),
+        ),
+        if (product.kind == ProductKind.service)
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                onRenewWarranty();
+              },
+              icon: const Icon(Icons.autorenew_rounded),
+              label: Text(tr(context, 'Renew warranty')),
+            ),
+          ),
+        const SizedBox(height: 8),
         if (product.kind != ProductKind.service &&
             (product.quantity == 0 ||
                 (product.daysToExpiry != null &&

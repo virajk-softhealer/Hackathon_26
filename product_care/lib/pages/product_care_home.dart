@@ -10,6 +10,7 @@ import '../models/product.dart';
 import '../services/backup_service.dart';
 import '../services/data_export_service.dart';
 import '../services/product_store.dart';
+import '../services/reminder_notification_service.dart';
 import '../services/restock_search_service.dart';
 import '../widgets/product_details_sheet.dart';
 import '../widgets/product_form_sheet.dart';
@@ -43,6 +44,8 @@ class _ProductCareHomeState extends State<ProductCareHome> {
   ProductStore _store = ProductStore();
   final BackupService _backupService = const BackupService();
   final DataExportService _dataExportService = const DataExportService();
+  final ReminderNotificationService _notificationService =
+      ReminderNotificationService();
   final RestockSearchService _restockSearchService =
       const RestockSearchService();
   final PageController _pageController = PageController();
@@ -53,6 +56,8 @@ class _ProductCareHomeState extends State<ProductCareHome> {
   bool _splashDelayDone = false;
   bool _storeLoaded = false;
   String? _startupMessage;
+  String? _pendingNotificationProductId;
+  bool _notificationReady = false;
 
   @override
   void initState() {
@@ -167,10 +172,52 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     if (product == null || !mounted) return;
     setState(() => _store.addProduct(product));
     await _persistStore();
+    if (!mounted) return;
+    if (_hasReminderDate(product)) {
+      await _rescheduleNotifications(requestPermission: true);
+    }
+    if (!mounted) return;
     _showMessage(
       tr(context, '{name} added to your products.', {'name': product.name}),
     );
   }
+
+  Future<void> _editProduct(
+    Product product, {
+    bool renewWarranty = false,
+  }) async {
+    final edited = await showModalBottomSheet<Product>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => ProductFormSheet(
+        product: product,
+        renewWarranty: renewWarranty,
+      ),
+    );
+    if (edited == null || !mounted) return;
+    final updated = _store.updateProduct(edited);
+    if (!updated) {
+      _showMessage(tr(context, 'This product is no longer available.'));
+      return;
+    }
+    setState(() {});
+    await _persistStore();
+    if (!mounted) return;
+    if (_hasReminderDate(edited)) {
+      await _rescheduleNotifications(requestPermission: true);
+    } else {
+      await _rescheduleNotifications();
+    }
+    if (mounted) _showMessage(tr(context, 'Product details saved.'));
+  }
+
+  bool _hasReminderDate(Product product) =>
+      product.service != null ||
+      product.warranty != null ||
+      (product.kind == ProductKind.storable &&
+          product.quantity > 0 &&
+          product.expiry != null);
 
   void _openProduct(Product product) {
     showModalBottomSheet<void>(
@@ -179,9 +226,12 @@ class _ProductCareHomeState extends State<ProductCareHome> {
       builder: (_) => ProductDetailsSheet(
         product: product,
         onRecordLoss: () => _recordLoss(product),
+        onEdit: () => _editProduct(product),
+        onRenewWarranty: () => _editProduct(product, renewWarranty: true),
         onRemove: () {
           setState(() => _store.products.remove(product));
           _persistStore();
+          _rescheduleNotifications();
           _showMessage(tr(context, '{name} removed.', {'name': product.name}));
         },
         onRestock: () => _showRestockSearch(product),
@@ -201,6 +251,9 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     }
     setState(() {});
     await _persistStore();
+    if (!mounted) return;
+    await _rescheduleNotifications();
+    if (!mounted) return;
     _showMessage(
       tr(
         context,
@@ -242,23 +295,22 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     );
   }
 
-  void _showNotificationStatus() {
+  Future<void> _showNotificationStatus() async {
+    final granted = await _notificationService.requestPermission();
+    if (!mounted) return;
+    if (!granted) {
+      _showMessage(
+        tr(context, 'Allow notifications in device settings to receive reminders.'),
+      );
+      return;
+    }
+    await _rescheduleNotifications();
+    final sent = await _notificationService.sendTestNotification(_store);
+    if (!mounted) return;
     _showMessage(
-      _store.products.any(
-            (product) =>
-                product.service != null ||
-                (product.kind == ProductKind.storable &&
-                    product.quantity > 0 &&
-                    product.expiry != null),
-          )
-          ? tr(
-              context,
-              'Reminder preview is not sent: device notifications are not configured yet.',
-            )
-          : tr(
-              context,
-              'There are no expiry or service dates available to preview.',
-            ),
+      sent
+          ? tr(context, 'A test reminder was sent to your device.')
+          : tr(context, 'Add an expiry, warranty, or service date to test reminders.'),
     );
   }
 
@@ -270,6 +322,17 @@ class _ProductCareHomeState extends State<ProductCareHome> {
       _reminderDays = Set<int>.of(loaded.reminderDays);
       widget.onLanguageChanged(loaded.languageCode);
       _startupMessage = loaded.loadError;
+      if (loaded.loadError == null) {
+        try {
+          await _notificationService.initialize(
+            onNotificationTap: _handleNotificationTap,
+          );
+          _notificationReady = true;
+          await _notificationService.syncSchedule(_store);
+        } catch (_) {
+          _startupMessage = 'Device reminders could not be initialized.';
+        }
+      }
     } on Object catch (_) {
       // Keep the sample session available if the local data file cannot be read.
       _startupMessage =
@@ -288,14 +351,22 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         if (mounted) _showMessage(tr(context, message));
       });
     }
+    final pendingId = _pendingNotificationProductId;
+    if (pendingId != null) {
+      _pendingNotificationProductId = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openNotificationProduct(pendingId);
+      });
+    }
   }
 
   Future<void> _persistStore() async {
     try {
       await _store.persist();
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         _showMessage(tr(context, 'Could not save local Product Care data.'));
+      }
     }
   }
 
@@ -303,12 +374,67 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     setState(() => _reminderDays = Set<int>.of(days));
     _store.setReminderDays(days);
     _persistStore();
+    _rescheduleNotifications(requestPermission: true);
   }
 
   void _updateLanguage(String code) {
     setState(() => _store.setLanguageCode(code));
     widget.onLanguageChanged(code);
     _persistStore();
+    _rescheduleNotifications(forceReschedule: true);
+  }
+
+  Future<void> _rescheduleNotifications({
+    bool requestPermission = false,
+    bool forceReschedule = false,
+  }) async {
+    if (!_notificationReady) return;
+    try {
+      if (requestPermission) {
+        final granted = await _notificationService.requestPermission();
+        if (!granted) {
+          if (mounted) {
+            _showMessage(
+              tr(context, 'Allow notifications in device settings to receive reminders.'),
+            );
+          }
+          return;
+        }
+      }
+      final scheduled = await _notificationService.syncSchedule(
+        _store,
+        forceReschedule: forceReschedule,
+      );
+      if (!scheduled && requestPermission && mounted) {
+        _showMessage(tr(context, 'Notifications are not enabled.'));
+      }
+    } catch (_) {
+      if (mounted) {
+        _showMessage(tr(context, 'Reminders could not be scheduled.'));
+      }
+    }
+  }
+
+  void _handleNotificationTap(String? productId) {
+    if (productId == null) return;
+    if (!_storeLoaded || _showSplash) {
+      _pendingNotificationProductId = productId;
+      return;
+    }
+    _openNotificationProduct(productId);
+  }
+
+  void _openNotificationProduct(String productId) {
+    final product = _store.products.where((entry) => entry.id == productId);
+    if (product.isEmpty) {
+      _selectTab(3);
+      _showMessage(tr(context, 'This product is no longer available.'));
+      return;
+    }
+    _selectTab(1);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _openProduct(product.first);
+    });
   }
 
   Future<void> _exportExcel() async {
@@ -326,8 +452,9 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         _showMessage(tr(context, 'Excel file shared.'));
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         _showMessage(tr(context, 'Excel export could not be created.'));
+      }
     }
   }
 
@@ -335,10 +462,11 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     try {
       await _store.persist();
       final file = await _backupService.createBackup(_store);
-      if (mounted)
+      if (mounted) {
         _showMessage(
           tr(context, 'Backup saved: {name}', {'name': _fileName(file)}),
         );
+      }
     } catch (_) {
       if (mounted) _showMessage(tr(context, 'Backup could not be created.'));
     }
@@ -412,18 +540,20 @@ class _ProductCareHomeState extends State<ProductCareHome> {
       await _store.restore(snapshot);
       if (!mounted) return;
       setState(() => _reminderDays = Set<int>.of(snapshot.reminderDays));
+      widget.onLanguageChanged(snapshot.languageCode);
       _showMessage(
         tr(context, 'Backup restored from {name}.', {
           'name': _fileName(selected),
         }),
       );
     } on FormatException catch (error) {
-      if (mounted)
+      if (mounted) {
         _showMessage(
           tr(context, 'Backup was rejected: {reason}', {
-            'reason': error.message,
+            'reason': tr(context, error.message),
           }),
         );
+      }
     } catch (_) {
       if (mounted) {
         _showMessage(
@@ -446,13 +576,18 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         onSelectPlatform: (platform) async {
           Navigator.pop(sheetContext);
           final opened = await _restockSearchService.open(platform, product);
-          if (!opened && mounted) _showSearchFallback(product);
+          if (!opened && mounted) {
+            _showSearchFallback(product);
+          }
         },
         onCopy: () async {
           await _restockSearchService.copyQuery(product);
-          if (sheetContext.mounted) Navigator.pop(sheetContext);
-          if (mounted)
+          if (sheetContext.mounted) {
+            Navigator.pop(sheetContext);
+          }
+          if (mounted) {
             _showMessage(tr(context, 'Product search terms copied.'));
+          }
         },
       ),
     );
@@ -470,9 +605,12 @@ class _ProductCareHomeState extends State<ProductCareHome> {
           TextButton(
             onPressed: () async {
               await _restockSearchService.copyQuery(product);
-              if (dialogContext.mounted) Navigator.pop(dialogContext);
-              if (mounted)
+              if (dialogContext.mounted) {
+                Navigator.pop(dialogContext);
+              }
+              if (mounted) {
                 _showMessage(tr(context, 'Product search terms copied.'));
+              }
             },
             child: Text(tr(context, 'Copy search terms')),
           ),

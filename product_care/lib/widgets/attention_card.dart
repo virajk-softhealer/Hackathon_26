@@ -11,12 +11,21 @@ class AttentionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = product.expiry ?? product.service!;
-    final isService = product.service != null;
+    final events = <(String, DateTime)>[
+      if (product.expiry != null) ('Expiry', product.expiry!),
+      if (product.service != null) ('Service', product.service!),
+      if (product.warranty != null) ('Warranty', product.warranty!),
+    ]..sort((left, right) => left.$2.compareTo(right.$2));
+    final eventType = events.first.$1;
+    final date = events.first.$2;
+    final isService = eventType == 'Service';
+    final isWarranty = eventType == 'Warranty';
     final days = date.difference(DateTime.now()).inDays;
     final accent = isService
         ? const Color(0xFF5469AA)
-        : const Color(0xFFB56818);
+        : isWarranty
+            ? const Color(0xFF278765)
+            : const Color(0xFFB56818);
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -31,11 +40,17 @@ class AttentionCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isService
                       ? const Color(0xFFE7ECFA)
-                      : const Color(0xFFFFEED8),
+                      : isWarranty
+                          ? const Color(0xFFE5F0E9)
+                          : const Color(0xFFFFEED8),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
-                  isService ? Icons.build_outlined : Icons.schedule_rounded,
+                  isService
+                      ? Icons.build_outlined
+                      : isWarranty
+                          ? Icons.verified_user_outlined
+                          : Icons.schedule_rounded,
                   color: accent,
                 ),
               ),
@@ -53,12 +68,9 @@ class AttentionCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       days <= 0
-                          ? '${tr(context, isService ? 'Service' : 'Expiry')} · ${tr(context, 'Today')}'
+                          ? '${tr(context, eventType)} · ${tr(context, 'Today')}'
                           : tr(context, '{type} · {days} days left', {
-                              'type': tr(
-                                context,
-                                isService ? 'Service' : 'Expiry',
-                              ),
+                              'type': tr(context, eventType),
                               'days': days,
                             }),
                       style: TextStyle(

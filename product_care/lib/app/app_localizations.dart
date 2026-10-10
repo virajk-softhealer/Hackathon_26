@@ -259,6 +259,27 @@ class ProductCareLocalizations {
       'Setting': 'सेटिंग',
       'Value': 'मान',
       'Reminder preference saved.': 'रिमाइंडर सेटिंग सहेजी गई।',
+      'Product actions': 'उत्पाद कार्रवाइयाँ',
+      'Unbranded': 'बिना ब्रांड वाला',
+      'Saved Product Care data is invalid.':
+          'सहेजा गया प्रोडक्ट केयर डेटा अमान्य है।',
+      'This backup format is not supported.':
+          'यह बैकअप प्रारूप समर्थित नहीं है।',
+      'The backup is missing required data.': 'बैकअप में आवश्यक डेटा नहीं है।',
+      'A product record in the backup is invalid.':
+          'बैकअप में उत्पाद रिकॉर्ड अमान्य है।',
+      'Unknown product type.': 'अज्ञात उत्पाद प्रकार।',
+      'A product record is missing valid fields.':
+          'उत्पाद रिकॉर्ड में आवश्यक जानकारी नहीं है।',
+      'Invalid product date.': 'उत्पाद की तारीख अमान्य है।',
+      'The backup contains invalid settings or history.':
+          'बैकअप में सेटिंग या इतिहास अमान्य है।',
+      'The backup file is not valid JSON data.':
+          'बैकअप फ़ाइल का JSON डेटा अमान्य है।',
+      'That file is not a Product Care backup.':
+          'यह फ़ाइल प्रोडक्ट केयर बैकअप नहीं है।',
+      'Product Care Excel export': 'प्रोडक्ट केयर Excel निर्यात',
+      'Product inventory and stock-loss data': 'उत्पाद सूची और स्टॉक हानि डेटा',
     },
     'gu': {
       'Home': 'હોમ',
@@ -475,9 +496,12 @@ class ProductCareLocalizations {
       'Oct': 'ઑક્ટો',
       'Nov': 'નવે',
       'Dec': 'ડિસે',
-      'Camera and product recognition are not connected yet. You can add product details manually.': 'કેમેરા અને ઉત્પાદન ઓળખ હજી ઉપલબ્ધ નથી. તમે વિગતો જાતે ઉમેરી શકો છો.',
-      'Reminder preview is not sent: device notifications are not configured yet.': 'રિમાઇન્ડર મોકલાયો નથી: ડિવાઇસ નોટિફિકેશન સેટ નથી.',
-      'There are no expiry or service dates available to preview.': 'પૂર્વાવલોકન માટે સમાપ્તિ અથવા સર્વિસ તારીખ ઉપલબ્ધ નથી.',
+      'Camera and product recognition are not connected yet. You can add product details manually.':
+          'કેમેરા અને ઉત્પાદન ઓળખ હજી ઉપલબ્ધ નથી. તમે વિગતો જાતે ઉમેરી શકો છો.',
+      'Reminder preview is not sent: device notifications are not configured yet.':
+          'રિમાઇન્ડર મોકલાયો નથી: ડિવાઇસ નોટિફિકેશન સેટ નથી.',
+      'There are no expiry or service dates available to preview.':
+          'પૂર્વાવલોકન માટે સમાપ્તિ અથવા સર્વિસ તારીખ ઉપલબ્ધ નથી.',
       'Excel file shared.': 'Excel ફાઇલ શેર થઈ.',
       'Product': 'ઉત્પાદન',
       'Brand': 'બ્રાન્ડ',
@@ -490,6 +514,27 @@ class ProductCareLocalizations {
       'Setting': 'સેટિંગ',
       'Value': 'મૂલ્ય',
       'Reminder preference saved.': 'રિમાઇન્ડર પસંદગી સાચવાઈ.',
+      'Product actions': 'ઉત્પાદન ક્રિયાઓ',
+      'Unbranded': 'બ્રાન્ડ વિનાનું',
+      'Saved Product Care data is invalid.':
+          'સાચવેલો પ્રોડક્ટ કેર ડેટા અમાન્ય છે.',
+      'This backup format is not supported.': 'આ બેકઅપ ફોર્મેટ સપોર્ટેડ નથી.',
+      'The backup is missing required data.': 'બેકઅપમાં જરૂરી ડેટા નથી.',
+      'A product record in the backup is invalid.':
+          'બેકઅપમાં ઉત્પાદન રેકોર્ડ અમાન્ય છે.',
+      'Unknown product type.': 'ઉત્પાદનનો પ્રકાર અજ્ઞાત છે.',
+      'A product record is missing valid fields.':
+          'ઉત્પાદન રેકોર્ડમાં જરૂરી માહિતી નથી.',
+      'Invalid product date.': 'ઉત્પાદનની તારીખ અમાન્ય છે.',
+      'The backup contains invalid settings or history.':
+          'બેકઅપમાં સેટિંગ અથવા ઇતિહાસ અમાન્ય છે.',
+      'The backup file is not valid JSON data.':
+          'બેકઅપ ફાઇલનું JSON ડેટા અમાન્ય છે.',
+      'That file is not a Product Care backup.':
+          'આ ફાઇલ પ્રોડક્ટ કેર બેકઅપ નથી.',
+      'Product Care Excel export': 'પ્રોડક્ટ કેર Excel નિકાસ',
+      'Product inventory and stock-loss data':
+          'ઉત્પાદન યાદી અને જથ્થાના નુકસાનનો ડેટા',
     },
   };
 }

@@ -50,8 +50,11 @@ class DashboardPage extends StatelessWidget {
       final serviceNeedsAttention =
           product.service != null &&
           product.service!.difference(DateTime.now()).inDays <= 14;
+      final warrantyNeedsAttention = product.warranty != null &&
+          product.warranty!.difference(DateTime.now()).inDays <= 14;
       return expiryNeedsAttention ||
           serviceNeedsAttention ||
+          warrantyNeedsAttention ||
           (product.kind != ProductKind.service && product.quantity == 0);
     }).toList();
     return CustomScrollView(

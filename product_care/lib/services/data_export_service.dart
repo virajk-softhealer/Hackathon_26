@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'dart:ui' show Rect;
 
 import 'package:excel/excel.dart';
 import 'package:flutter/widgets.dart';
@@ -86,8 +85,8 @@ class DataExportService {
             mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           ),
         ],
-        title: 'Product Care Excel export',
-        text: 'Product inventory and stock-loss data',
+        title: tr(context, 'Product Care Excel export'),
+        text: tr(context, 'Product inventory and stock-loss data'),
         sharePositionOrigin: origin,
       ),
     );
@@ -100,10 +99,14 @@ class DataExportService {
     TextCellValue(tr(context, _typeName(product.kind))),
     IntCellValue(product.quantity),
     TextCellValue(product.unit),
-    TextCellValue(product.expiry?.toIso8601String() ?? ''),
-    TextCellValue(product.service?.toIso8601String() ?? ''),
+    _dateCell(product.expiry),
+    _dateCell(product.service),
     DoubleCellValue(product.cost),
   ];
+
+  CellValue _dateCell(DateTime? date) => date == null
+      ? TextCellValue('')
+      : DateCellValue(year: date.year, month: date.month, day: date.day);
 
   String _typeName(ProductKind kind) => switch (kind) {
     ProductKind.storable => 'Storable',

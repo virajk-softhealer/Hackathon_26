@@ -1,7 +1,10 @@
 enum ProductKind { storable, service, general }
 
 class Product {
+  static int _nextGeneratedId = 0;
+
   Product({
+    String? id,
     required this.name,
     required this.brand,
     required this.category,
@@ -9,10 +12,12 @@ class Product {
     required this.unit,
     this.expiry,
     this.service,
+    this.warranty,
     this.cost = 0,
     this.kind = ProductKind.storable,
-  });
+  }) : id = id ?? _newId();
 
+  final String id;
   final String name;
   final String brand;
   final String category;
@@ -20,6 +25,7 @@ class Product {
   final String unit;
   final DateTime? expiry;
   final DateTime? service;
+  final DateTime? warranty;
   final double cost;
   final ProductKind kind;
 
@@ -31,20 +37,26 @@ class Product {
     return expiryDay.difference(today).inDays;
   }
 
+  static String _newId() =>
+      'product_${DateTime.now().microsecondsSinceEpoch}_${_nextGeneratedId++}';
+
   Map<String, Object?> toJson() => {
     'name': name,
+    'id': id,
     'brand': brand,
     'category': category,
     'quantity': quantity,
     'unit': unit,
     'expiry': expiry?.toIso8601String(),
     'service': service?.toIso8601String(),
+    'warranty': warranty?.toIso8601String(),
     'cost': cost,
     'kind': kind.name,
   };
 
   factory Product.fromJson(Map<String, Object?> json) {
     final name = json['name'];
+    final rawId = json['id'];
     final brand = json['brand'];
     final category = json['category'];
     final unit = json['unit'];
@@ -57,7 +69,8 @@ class Product {
         unit is! String ||
         rawQuantity is! int ||
         rawQuantity < 0 ||
-        rawKind is! String) {
+        rawKind is! String ||
+        (rawId != null && rawId is! String)) {
       throw const FormatException('A product record is missing valid fields.');
     }
     final kind = ProductKind.values.where((value) => value.name == rawKind);
@@ -77,12 +90,14 @@ class Product {
     final cost = rawCost is num ? rawCost.toDouble() : 0.0;
     return Product(
       name: name.trim(),
+      id: rawId as String?,
       brand: brand,
       category: category,
       quantity: kind.first == ProductKind.service ? 0 : rawQuantity,
       unit: unit,
       expiry: parseDate(json['expiry']),
       service: parseDate(json['service']),
+      warranty: parseDate(json['warranty']),
       cost: cost < 0 ? 0 : cost,
       kind: kind.first,
     );

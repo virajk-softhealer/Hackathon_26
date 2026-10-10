@@ -20,7 +20,7 @@ class AlertsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final alerts = products.where(_isReminderDue).toList();
+    final reminders = products.expand(_remindersFor).toList();
     return CustomScrollView(
       slivers: [
         SliverPadding(
@@ -32,7 +32,9 @@ class AlertsPage extends StatelessWidget {
                   Expanded(
                     child: Text(
                       tr(context, 'Alerts'),
-                      style: Theme.of(context).textTheme.headlineSmall
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w800),
                     ),
                   ),
@@ -53,19 +55,19 @@ class AlertsPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              if (alerts.isEmpty && losses.isEmpty)
+              if (reminders.isEmpty && losses.isEmpty)
                 const EmptyStateCard(
                   title: 'You’re up to date',
                   message: 'New reminders will show here when a product needs attention.',
                   icon: Icons.notifications_active_outlined,
                 )
               else ...[
-                ...alerts.map(
-                  (product) => Padding(
+                ...reminders.map(
+                  (reminder) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _ReminderAlert(
-                      product: product,
-                      onTap: () => onOpenProduct(product),
+                      reminder: reminder,
+                      onTap: () => onOpenProduct(reminder.product),
                     ),
                   ),
                 ),
@@ -88,17 +90,12 @@ class AlertsPage extends StatelessWidget {
               ],
               Card(
                 child: ListTile(
-                  leading: Icon(
+                  leading: const Icon(
                     Icons.notifications_outlined,
                     color: Color(0xFF246B52),
                   ),
                   title: Text(tr(context, 'Reminder scheduling')),
-                  subtitle: Text(
-                    tr(
-                      context,
-                      'Local notification delivery is not configured yet.',
-                    ),
-                  ),
+                  subtitle: Text(tr(context, 'Device reminders follow the shared day setting.')),
                   isThreeLine: true,
                 ),
               ),
@@ -110,28 +107,29 @@ class AlertsPage extends StatelessWidget {
     );
   }
 
-  bool _isReminderDue(Product product) {
-    final serviceDate = product.service;
-    if (serviceDate != null) {
-      final days = _daysFromToday(serviceDate);
-      return days <= 0 || reminderDays.contains(days);
+  List<_ReminderEntry> _remindersFor(Product product) {
+    final entries = <_ReminderEntry>[];
+    void add(String kind, DateTime? date) {
+      if (date == null) return;
+      final days = _daysFromToday(date);
+      if (days <= 0 || reminderDays.contains(days)) {
+        entries.add(_ReminderEntry(product, kind, date, days));
+      }
     }
-    final days = product.daysToExpiry;
-    if (product.kind != ProductKind.storable ||
-        product.quantity <= 0 ||
-        days == null) {
-      return false;
+
+    add('Service', product.service);
+    add('Warranty', product.warranty);
+    if (product.kind == ProductKind.storable && product.quantity > 0) {
+      add('Expiry', product.expiry);
     }
-    return days <= 0 || reminderDays.contains(days);
+    return entries;
   }
 
   int _daysFromToday(DateTime date) {
     final now = DateTime.now();
-    return DateTime(
-      date.year,
-      date.month,
-      date.day,
-    ).difference(DateTime(now.year, now.month, now.day)).inDays;
+    return DateTime(date.year, date.month, date.day)
+        .difference(DateTime(now.year, now.month, now.day))
+        .inDays;
   }
 
   void _showMessage(BuildContext context, String message) {
@@ -141,51 +139,37 @@ class AlertsPage extends StatelessWidget {
   }
 }
 
-class _ReminderAlert extends StatelessWidget {
-  const _ReminderAlert({required this.product, required this.onTap});
+class _ReminderEntry {
+  const _ReminderEntry(this.product, this.kind, this.date, this.days);
 
   final Product product;
+  final String kind;
+  final DateTime date;
+  final int days;
+}
+
+class _ReminderAlert extends StatelessWidget {
+  const _ReminderAlert({required this.reminder, required this.onTap});
+
+  final _ReminderEntry reminder;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final isService = product.service != null;
-    final days = isService
-        ? _daysFromToday(product.service!)
-        : product.daysToExpiry!;
-    final title = isService
-        ? tr(context, 'Service reminder: {name}', {'name': product.name})
-        : tr(context, 'Expiry reminder: {name}', {'name': product.name});
-    final message = isService
-        ? days <= 0
-              ? tr(
-                  context,
-                  '{name} is due for service. Review the product details.',
-                  {'name': product.name},
-                )
-              : tr(
-                  context,
-                  '{name} requires servicing in {days} days. Review the product details.',
-                  {'name': product.name, 'days': days},
-                )
-        : days < 0
-        ? tr(
-            context,
-            '{name} is past its expiry date. Review the product details.',
-            {'name': product.name},
-          )
-        : days == 0
-        ? tr(context, '{name} expires today. Review the product details.', {
-            'name': product.name,
-          })
-        : tr(
-            context,
-            '{name} expires in {days} days. Review the product details.',
-            {'name': product.name, 'days': days},
-          );
-    final iconColor = isService
+    final product = reminder.product;
+    final kind = reminder.kind;
+    final isService = kind == 'Service';
+    final isWarranty = kind == 'Warranty';
+    final color = isService
         ? const Color(0xFF5469AA)
-        : const Color(0xFFB56818);
+        : isWarranty
+            ? const Color(0xFF278765)
+            : const Color(0xFFB56818);
+    final title = tr(context, '{type} reminder: {name}', {
+      'type': tr(context, kind),
+      'name': product.name,
+    });
+    final body = _message(context);
     return Card(
       child: ListTile(
         onTap: onTap,
@@ -195,12 +179,18 @@ class _ReminderAlert extends StatelessWidget {
           decoration: BoxDecoration(
             color: isService
                 ? const Color(0xFFE7ECFA)
-                : const Color(0xFFFFEED8),
+                : isWarranty
+                    ? const Color(0xFFE5F0E9)
+                    : const Color(0xFFFFEED8),
             borderRadius: BorderRadius.circular(13),
           ),
           child: Icon(
-            isService ? Icons.build_outlined : Icons.hourglass_bottom_rounded,
-            color: iconColor,
+            isService
+                ? Icons.build_outlined
+                : isWarranty
+                    ? Icons.verified_user_outlined
+                    : Icons.hourglass_bottom_rounded,
+            color: color,
           ),
         ),
         title: Text(
@@ -209,18 +199,39 @@ class _ReminderAlert extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
         ),
-        subtitle: Text(message),
+        subtitle: Text(body),
         isThreeLine: true,
       ),
     );
   }
-}
 
-int _daysFromToday(DateTime date) {
-  final now = DateTime.now();
-  return DateTime(
-    date.year,
-    date.month,
-    date.day,
-  ).difference(DateTime(now.year, now.month, now.day)).inDays;
+  String _message(BuildContext context) {
+    final name = reminder.product.name;
+    if (reminder.kind == 'Service') {
+      return reminder.days <= 0
+          ? tr(context, '{name} is due for service today.', {'name': name})
+          : tr(context, '{name} needs service in {days} days.', {
+              'name': name,
+              'days': reminder.days,
+            });
+    }
+    if (reminder.kind == 'Warranty') {
+      return reminder.days < 0
+          ? tr(context, 'Warranty for {name} has expired.', {'name': name})
+          : reminder.days == 0
+              ? tr(context, 'Warranty for {name} expires today.', {'name': name})
+              : tr(context, 'Warranty for {name} expires in {days} days.', {
+                  'name': name,
+                  'days': reminder.days,
+                });
+    }
+    return reminder.days < 0
+        ? tr(context, '{name} is past its expiry date. Review the product details.', {'name': name})
+        : reminder.days == 0
+            ? tr(context, '{name} expires today. Review the product details.', {'name': name})
+            : tr(context, '{name} expires in {days} days. Review the product details.', {
+                'name': name,
+                'days': reminder.days,
+              });
+  }
 }

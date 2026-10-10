@@ -213,7 +213,7 @@ class SettingsPage extends StatelessWidget {
           onReminderDaysChanged({days});
           _showMessage(
             pageContext,
-            tr(pageContext, 'Shared reminders updated for this session.'),
+            tr(pageContext, 'Reminder preference saved.'),
           );
         },
       ),
@@ -237,9 +237,9 @@ class SettingsPage extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 for (final option in const [
+                  ('gu', 'Gujarati', 'ગુજરાતી'),
                   ('en', 'English', 'English'),
                   ('hi', 'Hindi', 'हिन्दी'),
-                  ('gu', 'Gujarati', 'ગુજરાતી'),
                 ])
                   RadioListTile<String>(
                     value: option.$1,

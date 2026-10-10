@@ -7,16 +7,19 @@ The Flutter client is in this folder. Run it with `flutter pub get` and `flutter
 
 The current app includes the Product Care branded dashboard and five main destinations (Home, Products, Calendar,
 Alerts, and Settings), a zoom-in animated splash, horizontal swipe navigation, sample household products, product
-entry and filtering, clickable dashboard counts, shared expiry/service reminder intervals, stock-loss quantity
-confirmation, and light/dark/system appearance selection. Service items do not count as inventory; out-of-stock
-Storable items do not generate expiry alerts. The supplied
+entry and filtering, clickable dashboard counts, one shared radio/custom reminder interval for expiry and service,
+stock-loss quantity confirmation, and light/dark/system appearance selection. English, Gujarati, and Hindi are
+available throughout the app. Service items do not count as inventory; out-of-stock Storable items do not generate
+expiry alerts. The supplied
 `app_icon_1.png` is used for the app branding and launcher icons. Android, iOS, and web display the name **Product Care**.
 
 Product records, stock-loss history, and reminder intervals are now saved locally as JSON. Settings can create a
 versioned on-device backup and restore one after validating it. Restock search opens Google, Amazon India, Flipkart,
-or Zepto with an encoded product query, with clipboard copy as a fallback. Backups stay in the app's private documents
-folder; external file import/export is not included. Camera/OCR scanning, operating-system notification delivery,
-language packs, and other production requirements below still need implementation.
+or Zepto with an encoded product query and platform-colored marks, with clipboard copy as a fallback. Settings also
+exports Products, Stock Losses, and reminder/language preferences to an `.xlsx` workbook and opens the device share
+sheet. Backups stay in the app's private documents folder; external backup file import/export is not included.
+Camera/OCR scanning, operating-system notification delivery, and other production requirements below still need
+implementation.
 
 ## 1. Project Overview
 

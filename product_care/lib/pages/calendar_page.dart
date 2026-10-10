@@ -23,12 +23,14 @@ class CalendarPage extends StatelessWidget {
     final events =
         products
             .where(
-              (product) => product.expiry != null || product.service != null,
+              (product) =>
+                  product.expiry != null ||
+                  product.service != null ||
+                  product.warranty != null,
             )
             .toList()
           ..sort(
-            (a, b) =>
-                (a.expiry ?? a.service!).compareTo(b.expiry ?? b.service!),
+            (a, b) => _nextDate(a).compareTo(_nextDate(b)),
           );
     final now = DateTime.now();
     return CustomScrollView(
@@ -90,7 +92,7 @@ class CalendarPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'This month',
+                              tr(context, 'This month'),
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 16,
@@ -134,5 +136,13 @@ class CalendarPage extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  DateTime _nextDate(Product product) {
+    final dates = [product.expiry, product.service, product.warranty]
+        .whereType<DateTime>()
+        .toList()
+      ..sort();
+    return dates.first;
   }
 }

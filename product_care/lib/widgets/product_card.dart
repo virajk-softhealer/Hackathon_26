@@ -14,15 +14,22 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isService = product.service != null;
+    final hasWarranty = product.warranty != null;
     final days = product.daysToExpiry;
+    final daysToWarranty = product.warranty?.difference(DateTime.now()).inDays;
     final statusColor = isService
         ? const Color(0xFF5866A8)
-        : days != null && days <= 7
+        : (days != null && days <= 7) ||
+              (daysToWarranty != null && daysToWarranty <= 7)
         ? const Color(0xFFB56818)
         : brandGreen;
     final status = isService
         ? tr(context, 'Service in {days} days', {
             'days': product.service!.difference(DateTime.now()).inDays,
+        })
+        : hasWarranty
+        ? tr(context, 'Warranty expires in {days} days', {
+            'days': daysToWarranty,
           })
         : days == null
         ? tr(context, 'No expiry date')
@@ -57,7 +64,7 @@ class ProductCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '${product.brand} · ${tr(context, product.category)}',
+                      '${product.brand == 'Unbranded' ? tr(context, 'Unbranded') : product.brand} · ${tr(context, product.category)}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -72,7 +79,9 @@ class ProductCard extends StatelessWidget {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Icon(
-                          isService ? Icons.build_outlined : Icons.schedule,
+                          isService || hasWarranty
+                              ? Icons.verified_user_outlined
+                              : Icons.schedule,
                           size: 14,
                           color: statusColor,
                         ),
@@ -102,7 +111,7 @@ class ProductCard extends StatelessWidget {
               IconButton(
                 onPressed: onTap,
                 icon: const Icon(Icons.more_horiz_rounded),
-                tooltip: 'Product actions',
+                tooltip: tr(context, 'Product actions'),
               ),
             ],
           ),

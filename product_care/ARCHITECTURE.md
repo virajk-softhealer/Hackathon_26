@@ -8,7 +8,8 @@ lib/
 ├── main.dart                    # Flutter entry point
 ├── app/
 │   ├── product_care_app.dart    # MaterialApp and active theme mode
-│   └── app_theme.dart           # Shared light and dark Material 3 themes
+│   ├── app_theme.dart           # Shared light and dark Material 3 themes
+│   └── app_localizations.dart   # English, Hindi, and Gujarati strings
 ├── data/
 │   └── sample_products.dart     # Demo product records
 ├── models/
@@ -23,17 +24,21 @@ lib/
 ├── services/
 │   ├── product_store.dart       # Local JSON persistence and stock-loss updates
 │   ├── backup_service.dart      # Versioned on-device backup creation and restore parsing
-│   └── restock_search_service.dart # Encoded shopping platform searches
+│   ├── restock_search_service.dart # Encoded shopping platform searches
+│   └── data_export_service.dart # Excel workbook generation and platform sharing
 ├── utils/
 │   └── date_formatters.dart     # Shared date display helpers
 └── widgets/
     ├── product_care_splash.dart # Animated zoom-in launch screen
+    ├── product_care_navigation_bar.dart # Colored circular destination icons
     ├── attention_card.dart     # Shared expiry/service event card
     ├── empty_state_card.dart   # Shared empty state
     ├── product_card.dart       # Product list row
     ├── product_details_sheet.dart
     ├── product_form_sheet.dart
     ├── product_icon.dart
+    ├── platform_logo.dart
+    ├── reminder_interval_sheet.dart
     ├── restock_search_sheet.dart
     ├── record_loss_dialog.dart
     └── section_heading.dart
@@ -53,20 +58,21 @@ lib/
 ## Current functionality
 
 - **Home:** tappable product/stock summaries, upcoming expiry and service items, add and scan entry points.
-- **Navigation:** swipe horizontally between the five main pages or use the bottom navigation bar.
+- **Navigation:** swipe horizontally between the five main pages or use the colored circular bottom bar.
 - **Products:** search, status filters, Storable/Service/General product form, product details and removal.
 - **Calendar:** upcoming expiry and service dates.
 - **Alerts:** expiry reminders preview and stock-loss history.
-- **Settings:** immediate light, dark, or system theme selection, shared expiry/service reminder intervals, and local backup/restore.
-- **Restock:** opens encoded product searches in Google, Amazon India, Flipkart, or Zepto; product name copying is the offline fallback.
+- **Settings:** light/dark/system appearance, English/Hindi/Gujarati language selection, one shared radio/custom reminder day, local backup/restore, and Excel export/share.
+- **Restock:** opens encoded product searches in Google, Amazon India, Flipkart, or Zepto with colored platform marks; copying the query is the offline fallback.
+- **Excel export:** creates Products, Stock losses, and Settings sheets, then opens the platform share sheet.
 - **Stock loss:** quantity validation and stock reduction after confirmation.
 - **Service items:** no inventory quantity or stock value; service dates still participate in reminders.
 - **Expiry alerts:** require a Storable item with available stock. Out-of-stock Storable products do not create expiry alerts.
 
 ## Next implementation layer
 
-`ProductStore` currently persists JSON in the app documents folder; backup files are stored in its `ProductCareBackups`
+`ProductStore` persists JSON in the app documents folder; backup files are stored in its `ProductCareBackups`
 subfolder. This supports use across app restarts on the same installation. Backups are app-private and are not yet
 exported to a user-selected location or imported from another device. The camera/OCR flow, operating-system scheduled
-notifications, theme persistence, and localization are still not connected. Keep integrations behind services and
+notifications, and theme persistence are still not connected. Keep integrations behind services and
 repositories, and keep page widgets focused on displaying data and forwarding user intent through callbacks.

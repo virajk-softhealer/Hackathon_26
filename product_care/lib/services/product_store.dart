@@ -15,6 +15,7 @@ class ProductStore {
 
   final List<Product> products;
   final List<String> losses = [];
+  final Set<String> notificationKeys = {};
   Set<int> reminderDays = {3};
   String languageCode = 'en';
   File? _dataFile;
@@ -32,6 +33,7 @@ class ProductStore {
           throw const FormatException('Saved Product Care data is invalid.');
         }
         store._applySnapshot(ProductCareSnapshot.fromJson(decoded));
+        await store.persist();
       } on FormatException catch (error) {
         store.loadError = error.message;
       }
@@ -65,6 +67,13 @@ class ProductStore {
 
   void addProduct(Product product) => products.add(product);
 
+  bool updateProduct(Product product) {
+    final index = products.indexWhere((entry) => entry.id == product.id);
+    if (index < 0) return false;
+    products[index] = product;
+    return true;
+  }
+
   void setReminderDays(Set<int> days) => reminderDays = Set<int>.of(days);
 
   void setLanguageCode(String code) => languageCode = code;
@@ -89,6 +98,7 @@ class ProductStore {
       'created_at': DateTime.now().toUtc().toIso8601String(),
     'products': products.map((product) => product.toJson()).toList(),
     'losses': List<String>.of(losses),
+    'notification_keys': notificationKeys.toList()..sort(),
     'reminder_days': reminderDays.toList()..sort(),
     'language_code': languageCode,
   };
@@ -117,6 +127,9 @@ class ProductStore {
     losses
       ..clear()
       ..addAll(snapshot.losses);
+    notificationKeys
+      ..clear()
+      ..addAll(snapshot.notificationKeys);
     reminderDays = Set<int>.of(snapshot.reminderDays);
     languageCode = snapshot.languageCode;
   }
@@ -145,12 +158,14 @@ class ProductCareSnapshot {
     required this.losses,
     required this.reminderDays,
     required this.languageCode,
+    required this.notificationKeys,
   });
 
   final List<Product> products;
   final List<String> losses;
   final Set<int> reminderDays;
   final String languageCode;
+  final Set<String> notificationKeys;
 
   factory ProductCareSnapshot.fromJson(Map<String, dynamic> json) {
     if (json['format'] != ProductStore.backupFormat ||
@@ -161,9 +176,11 @@ class ProductCareSnapshot {
     final rawLosses = json['losses'];
     final rawReminderDays = json['reminder_days'];
     final rawLanguageCode = json['language_code'] ?? 'en';
+    final rawNotificationKeys = json['notification_keys'] ?? <dynamic>[];
     if (rawProducts is! List ||
         rawLosses is! List ||
         rawReminderDays is! List ||
+        rawNotificationKeys is! List ||
         rawLanguageCode is! String ||
         !const {'en', 'hi', 'gu'}.contains(rawLanguageCode)) {
       throw const FormatException('The backup is missing required data.');
@@ -177,6 +194,7 @@ class ProductCareSnapshot {
       return Product.fromJson(record);
     }).toList();
     if (rawLosses.any((entry) => entry is! String) ||
+        rawNotificationKeys.any((entry) => entry is! String) ||
         rawReminderDays.any(
           (entry) => entry is! int || entry < 1 || entry > 365,
         )) {
@@ -199,6 +217,7 @@ class ProductCareSnapshot {
       losses: rawLosses.cast<String>(),
       reminderDays: normalizedReminderDays,
       languageCode: rawLanguageCode,
+      notificationKeys: rawNotificationKeys.cast<String>().toSet(),
     );
   }
 
@@ -207,6 +226,7 @@ class ProductCareSnapshot {
     'version': ProductStore.schemaVersion,
     'products': products.map((product) => product.toJson()).toList(),
     'losses': losses,
+    'notification_keys': notificationKeys.toList()..sort(),
     'reminder_days': reminderDays.toList()..sort(),
     'language_code': languageCode,
   };
