@@ -16,7 +16,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
   final _quantity = TextEditingController(text: '1');
   final _cost = TextEditingController();
   String _category = 'Pantry';
-  String _kind = 'Expirable';
+  String _kind = 'Storable';
   DateTime? _date;
 
   @override
@@ -80,6 +80,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
               Expanded(
                 child: DropdownButtonFormField<String>(
                   initialValue: _category,
+                  isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Category'),
                   items:
                       const [
@@ -105,48 +106,51 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
               Expanded(
                 child: DropdownButtonFormField<String>(
                   initialValue: _kind,
+                  isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Product type'),
-                  items: const ['Expirable', 'Service', 'General']
+                  items: const ['Storable', 'Service', 'General']
                       .map(
                         (value) =>
                             DropdownMenuItem(value: value, child: Text(value)),
                       )
                       .toList(),
                   onChanged: (value) =>
-                      setState(() => _kind = value ?? 'Expirable'),
+                      setState(() => _kind = value ?? 'Storable'),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _quantity,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Quantity',
-                    prefixIcon: Icon(Icons.numbers),
+          if (_kind != 'Service') ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _quantity,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Quantity',
+                      prefixIcon: Icon(Icons.numbers),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  controller: _cost,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Unit cost (₹)',
-                    prefixIcon: Icon(Icons.currency_rupee),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _cost,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Unit cost (₹)',
+                      prefixIcon: Icon(Icons.currency_rupee),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          if (_kind != 'General') ...[
+              ],
+            ),
+          ],
+          if (_kind == 'Storable' || _kind == 'Service') ...[
             const SizedBox(height: 10),
             OutlinedButton.icon(
               onPressed: _pickDate,
@@ -185,7 +189,8 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
 
   void _save() {
     final quantity = int.tryParse(_quantity.text);
-    if (_name.text.trim().isEmpty || quantity == null || quantity < 0) {
+    if (_name.text.trim().isEmpty ||
+        (_kind != 'Service' && (quantity == null || quantity < 0))) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Add a name and a valid quantity.')),
       );
@@ -194,7 +199,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     final kind = switch (_kind) {
       'Service' => ProductKind.service,
       'General' => ProductKind.general,
-      _ => ProductKind.expiry,
+      _ => ProductKind.storable,
     };
     Navigator.pop(
       context,
@@ -202,9 +207,9 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
         name: _name.text.trim(),
         brand: _brand.text.trim().isEmpty ? 'Unbranded' : _brand.text.trim(),
         category: _category,
-        quantity: quantity,
+        quantity: kind == ProductKind.service ? 0 : quantity!,
         unit: 'units',
-        expiry: kind == ProductKind.expiry ? _date : null,
+        expiry: kind == ProductKind.storable ? _date : null,
         service: kind == ProductKind.service ? _date : null,
         cost: double.tryParse(_cost.text) ?? 0,
         kind: kind,

@@ -81,15 +81,16 @@ class ProductCard extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        Text(
-                          '· ${product.quantity} ${product.unit}',
-                          style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                            fontSize: 12,
+                        if (!isService)
+                          Text(
+                            '· ${product.quantity} ${product.unit}',
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ],

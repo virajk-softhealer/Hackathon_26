@@ -13,6 +13,9 @@ class DashboardPage extends StatelessWidget {
     required this.lowStockCount,
     required this.totalUnits,
     required this.onOpenProducts,
+    required this.onOpenExpiring,
+    required this.onOpenInStock,
+    required this.onOpenLowStock,
     required this.onOpenCalendar,
     required this.onOpenAlerts,
     required this.onOpenProduct,
@@ -26,6 +29,9 @@ class DashboardPage extends StatelessWidget {
   final int lowStockCount;
   final int totalUnits;
   final VoidCallback onOpenProducts;
+  final VoidCallback onOpenExpiring;
+  final VoidCallback onOpenInStock;
+  final VoidCallback onOpenLowStock;
   final VoidCallback onOpenCalendar;
   final VoidCallback onOpenAlerts;
   final ValueChanged<Product> onOpenProduct;
@@ -36,13 +42,16 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final attention = products.where((product) {
       final expiryNeedsAttention =
-          product.daysToExpiry != null && product.daysToExpiry! <= 7;
+          product.kind == ProductKind.storable &&
+          product.quantity > 0 &&
+          product.daysToExpiry != null &&
+          product.daysToExpiry! <= 7;
       final serviceNeedsAttention =
           product.service != null &&
           product.service!.difference(DateTime.now()).inDays <= 14;
       return expiryNeedsAttention ||
           serviceNeedsAttention ||
-          product.quantity == 0;
+          (product.kind != ProductKind.service && product.quantity == 0);
     }).toList();
     return CustomScrollView(
       slivers: [
@@ -72,6 +81,7 @@ class DashboardPage extends StatelessWidget {
                         value: '${products.length}',
                         icon: Icons.inventory_2_outlined,
                         width: width,
+                        onTap: onOpenProducts,
                       ),
                       _MetricCard(
                         label: 'Expiring soon',
@@ -80,6 +90,7 @@ class DashboardPage extends StatelessWidget {
                         width: width,
                         tint: const Color(0xFFFFEED8),
                         accent: const Color(0xFFB56818),
+                        onTap: onOpenExpiring,
                       ),
                       _MetricCard(
                         label: 'Available stock',
@@ -89,6 +100,7 @@ class DashboardPage extends StatelessWidget {
                         tint: const Color(0xFFE7ECFA),
                         accent: const Color(0xFF5469AA),
                         subtitle: 'units in total',
+                        onTap: onOpenInStock,
                       ),
                       _MetricCard(
                         label: 'Needs attention',
@@ -98,6 +110,7 @@ class DashboardPage extends StatelessWidget {
                         tint: const Color(0xFFF9E5E1),
                         accent: const Color(0xFFB74A3C),
                         subtitle: 'low or out of stock',
+                        onTap: onOpenLowStock,
                       ),
                     ],
                   );
@@ -299,6 +312,7 @@ class _MetricCard extends StatelessWidget {
     required this.value,
     required this.icon,
     required this.width,
+    required this.onTap,
     this.subtitle,
     this.tint = const Color(0xFFE5F0E9),
     this.accent = brandGreen,
@@ -308,6 +322,7 @@ class _MetricCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final double width;
+  final VoidCallback onTap;
   final String? subtitle;
   final Color tint;
   final Color accent;
@@ -316,53 +331,60 @@ class _MetricCard extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(
     width: width,
     child: Card(
-      child: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: tint,
-                    borderRadius: BorderRadius.circular(11),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(15),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: tint,
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Icon(icon, color: accent, size: 19),
                   ),
-                  child: Icon(icon, color: accent, size: 19),
+                  const Spacer(),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 24,
+                      color: accent,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
                 ),
-                const Spacer(),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
                 Text(
-                  value,
+                  subtitle!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 24,
-                    color: accent,
+                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                subtitle!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     ),

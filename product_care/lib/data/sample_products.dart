@@ -32,7 +32,7 @@ List<Product> createSampleProducts() => [
     name: 'Air conditioner',
     brand: 'Daikin',
     category: 'Appliances',
-    quantity: 1,
+    quantity: 0,
     unit: 'unit',
     service: DateTime.now().add(const Duration(days: 7)),
     kind: ProductKind.service,

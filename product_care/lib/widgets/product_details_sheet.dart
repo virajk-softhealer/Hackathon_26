@@ -64,11 +64,12 @@ class ProductDetailsSheet extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 18),
-        _DetailLine(
-          icon: Icons.inventory_2_outlined,
-          label: 'Available stock',
-          value: '${product.quantity} ${product.unit}',
-        ),
+        if (product.kind != ProductKind.service)
+          _DetailLine(
+            icon: Icons.inventory_2_outlined,
+            label: 'Available stock',
+            value: '${product.quantity} ${product.unit}',
+          ),
         if (product.expiry != null)
           _DetailLine(
             icon: Icons.event_outlined,
@@ -81,8 +82,10 @@ class ProductDetailsSheet extends StatelessWidget {
             label: 'Next service',
             value: formatFullDate(product.service!),
           ),
-        if (product.quantity == 0 ||
-            (product.daysToExpiry != null && product.daysToExpiry! < 0)) ...[
+        if (product.kind != ProductKind.service &&
+            (product.quantity == 0 ||
+                (product.daysToExpiry != null &&
+                    product.daysToExpiry! < 0))) ...[
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
@@ -96,7 +99,7 @@ class ProductDetailsSheet extends StatelessWidget {
             ),
           ),
         ],
-        if (product.quantity > 0) ...[
+        if (product.kind != ProductKind.service && product.quantity > 0) ...[
           const SizedBox(height: 6),
           SizedBox(
             width: double.infinity,

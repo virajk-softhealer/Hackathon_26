@@ -5,12 +5,20 @@ class SettingsPage extends StatelessWidget {
     required this.themeMode,
     required this.onThemeChanged,
     required this.onTestNotifications,
+    required this.reminderDays,
+    required this.onReminderDaysChanged,
+    required this.onCreateBackup,
+    required this.onRestoreBackup,
     super.key,
   });
 
   final ThemeMode themeMode;
   final ValueChanged<ThemeMode> onThemeChanged;
   final VoidCallback onTestNotifications;
+  final Set<int> reminderDays;
+  final ValueChanged<Set<int>> onReminderDaysChanged;
+  final VoidCallback onCreateBackup;
+  final VoidCallback onRestoreBackup;
 
   @override
   Widget build(BuildContext context) => ListView(
@@ -89,7 +97,7 @@ class SettingsPage extends StatelessWidget {
             const Divider(height: 1, indent: 16, endIndent: 16),
             ListTile(
               title: const Text('Remind me before'),
-              subtitle: const Text('3 days · 1 day'),
+              subtitle: Text(_reminderSummary),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showReminderIntervals(context),
             ),
@@ -126,12 +134,19 @@ class SettingsPage extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.backup_outlined),
               title: const Text('Backup & restore'),
-              subtitle: const Text('Local backup tools are not configured yet'),
+              subtitle: const Text('Save or restore a local copy'),
+            ),
+            ListTile(
+              title: const Text('Create backup now'),
+              subtitle: const Text('Products, loss history, and reminders'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showMessage(
-                context,
-                'Backup and restore are not configured yet.',
-              ),
+              onTap: onCreateBackup,
+            ),
+            ListTile(
+              title: const Text('Restore a backup'),
+              subtitle: const Text('Choose a backup saved on this device'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: onRestoreBackup,
             ),
           ],
         ),
@@ -151,46 +166,64 @@ class SettingsPage extends StatelessWidget {
     ],
   );
 
-  void _showReminderIntervals(BuildContext context) {
+  String get _reminderSummary {
+    final sortedDays = reminderDays.toList()..sort((a, b) => b.compareTo(a));
+    if (sortedDays.isEmpty) return 'Off';
+    return sortedDays
+        .map((days) => '$days ${days == 1 ? 'day' : 'days'}')
+        .join(' · ');
+  }
+
+  void _showReminderIntervals(BuildContext pageContext) {
+    final selectedDays = Set<int>.from(reminderDays);
     showModalBottomSheet<void>(
-      context: context,
+      context: pageContext,
       useSafeArea: true,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(22),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Reminder intervals',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 8),
-            const Text('Shared intervals for expiry and service reminders.'),
-            const SizedBox(height: 12),
-            for (final days in [1, 2, 3, 5, 7, 14, 30])
-              CheckboxListTile(
-                value: days == 1 || days == 3,
-                onChanged: (_) {},
-                title: Text('$days ${days == 1 ? 'day' : 'days'} before'),
-                contentPadding: EdgeInsets.zero,
-                dense: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Reminder intervals',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
               ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _showMessage(
-                    context,
-                    'Reminder preferences saved for this session.',
-                  );
-                },
-                child: const Text('Done'),
+              const SizedBox(height: 8),
+              const Text('Shared intervals for expiry and service reminders.'),
+              const SizedBox(height: 12),
+              for (final days in [1, 2, 3, 5, 7, 14, 30])
+                CheckboxListTile(
+                  value: selectedDays.contains(days),
+                  onChanged: (selected) => setSheetState(() {
+                    if (selected == true) {
+                      selectedDays.add(days);
+                    } else {
+                      selectedDays.remove(days);
+                    }
+                  }),
+                  title: Text('$days ${days == 1 ? 'day' : 'days'} before'),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    onReminderDaysChanged(Set<int>.unmodifiable(selectedDays));
+                    Navigator.pop(sheetContext);
+                    _showMessage(
+                      pageContext,
+                      'Shared reminders updated for this session.',
+                    );
+                  },
+                  child: const Text('Done'),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

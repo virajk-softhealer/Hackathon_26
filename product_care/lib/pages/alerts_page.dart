@@ -7,22 +7,19 @@ class AlertsPage extends StatelessWidget {
   const AlertsPage({
     required this.products,
     required this.losses,
+    required this.reminderDays,
     required this.onOpenProduct,
     super.key,
   });
 
   final List<Product> products;
   final List<String> losses;
+  final Set<int> reminderDays;
   final ValueChanged<Product> onOpenProduct;
 
   @override
   Widget build(BuildContext context) {
-    final expiryAlerts = products
-        .where(
-          (product) =>
-              product.daysToExpiry != null && product.daysToExpiry! <= 7,
-        )
-        .toList();
+    final alerts = products.where(_isReminderDue).toList();
     return CustomScrollView(
       slivers: [
         SliverPadding(
@@ -53,17 +50,17 @@ class AlertsPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              if (expiryAlerts.isEmpty && losses.isEmpty)
+              if (alerts.isEmpty && losses.isEmpty)
                 const EmptyStateCard(
                   title: 'You’re up to date',
                   message: 'New reminders will show here when a product needs attention.',
                   icon: Icons.notifications_active_outlined,
                 )
               else ...[
-                ...expiryAlerts.map(
+                ...alerts.map(
                   (product) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: _ExpiryAlert(
+                    child: _ReminderAlert(
                       product: product,
                       onTap: () => onOpenProduct(product),
                     ),
@@ -107,6 +104,30 @@ class AlertsPage extends StatelessWidget {
     );
   }
 
+  bool _isReminderDue(Product product) {
+    final serviceDate = product.service;
+    if (serviceDate != null) {
+      final days = _daysFromToday(serviceDate);
+      return days <= 0 || reminderDays.contains(days);
+    }
+    final days = product.daysToExpiry;
+    if (product.kind != ProductKind.storable ||
+        product.quantity <= 0 ||
+        days == null) {
+      return false;
+    }
+    return days <= 0 || reminderDays.contains(days);
+  }
+
+  int _daysFromToday(DateTime date) {
+    final now = DateTime.now();
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).difference(DateTime(now.year, now.month, now.day)).inDays;
+  }
+
   void _showMessage(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
@@ -114,38 +135,66 @@ class AlertsPage extends StatelessWidget {
   }
 }
 
-class _ExpiryAlert extends StatelessWidget {
-  const _ExpiryAlert({required this.product, required this.onTap});
+class _ReminderAlert extends StatelessWidget {
+  const _ReminderAlert({required this.product, required this.onTap});
 
   final Product product;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: ListTile(
-      onTap: onTap,
-      leading: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFEED8),
-          borderRadius: BorderRadius.circular(13),
+  Widget build(BuildContext context) {
+    final isService = product.service != null;
+    final days = isService
+        ? _daysFromToday(product.service!)
+        : product.daysToExpiry!;
+    final title = isService
+        ? 'Service reminder: ${product.name}'
+        : 'Expiry reminder: ${product.name}';
+    final message = isService
+        ? '${product.name} ${days <= 0 ? 'is due for service' : 'requires servicing in $days days'}. Review the product details.'
+        : '${product.name} ${days < 0
+              ? 'is past its expiry date'
+              : days == 0
+              ? 'expires today'
+              : 'expires in $days days'}. Review the product details.';
+    final iconColor = isService
+        ? const Color(0xFF5469AA)
+        : const Color(0xFFB56818);
+    return Card(
+      child: ListTile(
+        onTap: onTap,
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: isService
+                ? const Color(0xFFE7ECFA)
+                : const Color(0xFFFFEED8),
+            borderRadius: BorderRadius.circular(13),
+          ),
+          child: Icon(
+            isService ? Icons.build_outlined : Icons.hourglass_bottom_rounded,
+            color: iconColor,
+          ),
         ),
-        child: const Icon(
-          Icons.hourglass_bottom_rounded,
-          color: Color(0xFFB56818),
+        title: Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
         ),
+        subtitle: Text(message),
+        isThreeLine: true,
       ),
-      title: Text(
-        'Expiry reminder: ${product.name}',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-      ),
-      subtitle: Text(
-        '${product.name} expires ${product.daysToExpiry == 0 ? 'today' : 'in ${product.daysToExpiry} days'}. Review the product details.',
-      ),
-      isThreeLine: true,
-    ),
-  );
+    );
+  }
+}
+
+int _daysFromToday(DateTime date) {
+  final now = DateTime.now();
+  return DateTime(
+    date.year,
+    date.month,
+    date.day,
+  ).difference(DateTime(now.year, now.month, now.day)).inDays;
 }

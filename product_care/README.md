@@ -6,15 +6,17 @@ The Flutter client is in this folder. Run it with `flutter pub get` and `flutter
 [`ARCHITECTURE.md`](ARCHITECTURE.md) for the source tree and a feature-by-feature implementation overview.
 
 The current app includes the Product Care branded dashboard and five main destinations (Home, Products, Calendar,
-Alerts, and Settings), a short animated splash, sample household products, product entry and filtering, expiry/service
-overview, stock-loss quantity confirmation, and light/dark/system appearance selection. The supplied
+Alerts, and Settings), a zoom-in animated splash, horizontal swipe navigation, sample household products, product
+entry and filtering, clickable dashboard counts, shared expiry/service reminder intervals, stock-loss quantity
+confirmation, and light/dark/system appearance selection. Service items do not count as inventory; out-of-stock
+Storable items do not generate expiry alerts. The supplied
 `app_icon_1.png` is used for the app branding and launcher icons. Android, iOS, and web display the name **Product Care**.
 
-This is the first UI and interaction pass over the Flutter starter project. Product data and preferences currently live
-in memory for the session. Local database persistence, camera/OCR scanning, operating-system notifications, language
-packs, backup/restore, and external restock search links still need implementation before the production-oriented
-requirements below are complete. Buttons for unavailable integrations explain their current status rather than
-pretending those services are active.
+Product records, stock-loss history, and reminder intervals are now saved locally as JSON. Settings can create a
+versioned on-device backup and restore one after validating it. Restock search opens Google, Amazon India, Flipkart,
+or Zepto with an encoded product query, with clipboard copy as a fallback. Backups stay in the app's private documents
+folder; external file import/export is not included. Camera/OCR scanning, operating-system notification delivery,
+language packs, and other production requirements below still need implementation.
 
 ## 1. Project Overview
 

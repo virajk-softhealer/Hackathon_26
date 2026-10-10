@@ -8,11 +8,13 @@ class ProductsPage extends StatefulWidget {
   const ProductsPage({
     required this.products,
     required this.onOpenProduct,
+    this.initialFilter = 'All',
     super.key,
   });
 
   final List<Product> products;
   final ValueChanged<Product> onOpenProduct;
+  final String initialFilter;
 
   @override
   State<ProductsPage> createState() => _ProductsPageState();
@@ -23,8 +25,14 @@ class _ProductsPageState extends State<ProductsPage> {
   String _query = '';
 
   @override
+  void initState() {
+    super.initState();
+    _filter = widget.initialFilter;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final categories = ['All', 'Expiring', 'Low stock', 'Service'];
+    final categories = ['All', 'Expiring', 'In stock', 'Low stock', 'Service'];
     final shown = widget.products.where((product) {
       final matchesQuery =
           '${product.name} ${product.brand} ${product.category}'
@@ -32,8 +40,15 @@ class _ProductsPageState extends State<ProductsPage> {
               .contains(_query.toLowerCase());
       final matchesFilter = switch (_filter) {
         'Expiring' =>
-          product.daysToExpiry != null && product.daysToExpiry! <= 14,
-        'Low stock' => product.quantity <= 1,
+          product.kind == ProductKind.storable &&
+              product.quantity > 0 &&
+              product.daysToExpiry != null &&
+              product.daysToExpiry! >= 0 &&
+              product.daysToExpiry! <= 7,
+        'Low stock' =>
+          product.kind != ProductKind.service && product.quantity <= 1,
+        'In stock' =>
+          product.kind != ProductKind.service && product.quantity > 0,
         'Service' => product.service != null,
         _ => true,
       };
