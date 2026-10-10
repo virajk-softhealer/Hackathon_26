@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../app/app_localizations.dart';
 import '../models/product.dart';
 import '../widgets/empty_state_card.dart';
 import '../widgets/product_card.dart';
@@ -62,13 +63,15 @@ class _ProductsPageState extends State<ProductsPage> {
           sliver: SliverList.list(
             children: [
               Text(
-                'Products',
+                tr(context, 'Products'),
                 style: Theme.of(context).textTheme.headlineSmall
                     ?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 5),
               Text(
-                '${widget.products.length} items in your home',
+                tr(context, '{count} items in your home', {
+                  'count': widget.products.length,
+                }),
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -76,9 +79,9 @@ class _ProductsPageState extends State<ProductsPage> {
               const SizedBox(height: 18),
               TextField(
                 onChanged: (value) => setState(() => _query = value),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   prefixIcon: Icon(Icons.search),
-                  hintText: 'Search products',
+                  hintText: tr(context, 'Search products'),
                   isDense: true,
                 ),
               ),
@@ -91,7 +94,7 @@ class _ProductsPageState extends State<ProductsPage> {
                         (category) => Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: ChoiceChip(
-                            label: Text(category),
+                            label: Text(tr(context, category)),
                             selected: _filter == category,
                             onSelected: (_) =>
                                 setState(() => _filter = category),

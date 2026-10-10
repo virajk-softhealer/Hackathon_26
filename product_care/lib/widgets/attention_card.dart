@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../app/app_localizations.dart';
 import '../models/product.dart';
-import '../utils/date_formatters.dart';
 
 class AttentionCard extends StatelessWidget {
   const AttentionCard({required this.product, required this.onTap, super.key});
@@ -52,7 +52,15 @@ class AttentionCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '${isService ? 'Service' : 'Expiry'} · ${days <= 0 ? 'Today' : '$days days left'}',
+                      days <= 0
+                          ? '${tr(context, isService ? 'Service' : 'Expiry')} · ${tr(context, 'Today')}'
+                          : tr(context, '{type} · {days} days left', {
+                              'type': tr(
+                                context,
+                                isService ? 'Service' : 'Expiry',
+                              ),
+                              'days': days,
+                            }),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 12,
@@ -62,7 +70,7 @@ class AttentionCard extends StatelessWidget {
                 ),
               ),
               Text(
-                formatShortDate(date),
+                localizedShortDate(context, date),
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 12,

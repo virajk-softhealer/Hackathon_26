@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../app/app_localizations.dart';
+import '../widgets/reminder_interval_sheet.dart';
+
 class SettingsPage extends StatelessWidget {
   const SettingsPage({
     required this.themeMode,
@@ -7,8 +10,11 @@ class SettingsPage extends StatelessWidget {
     required this.onTestNotifications,
     required this.reminderDays,
     required this.onReminderDaysChanged,
+    required this.languageCode,
+    required this.onLanguageChanged,
     required this.onCreateBackup,
     required this.onRestoreBackup,
+    required this.onExportExcel,
     super.key,
   });
 
@@ -17,56 +23,70 @@ class SettingsPage extends StatelessWidget {
   final VoidCallback onTestNotifications;
   final Set<int> reminderDays;
   final ValueChanged<Set<int>> onReminderDaysChanged;
+  final String languageCode;
+  final ValueChanged<String> onLanguageChanged;
   final VoidCallback onCreateBackup;
   final VoidCallback onRestoreBackup;
+  final VoidCallback onExportExcel;
 
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
     children: [
       Text(
-        'Settings',
+        tr(context, 'Settings'),
         style: Theme.of(context).textTheme.headlineSmall
             ?.copyWith(fontWeight: FontWeight.w800),
       ),
       const SizedBox(height: 5),
       Text(
-        'Make Product Care feel like yours',
+        tr(context, 'Make Product Care feel like yours'),
         style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
       const SizedBox(height: 20),
       Card(
         child: Column(
           children: [
-            const ListTile(
-              leading: CircleAvatar(
+            ListTile(
+              leading: const CircleAvatar(
                 backgroundColor: Color(0xFFE5F0E9),
-                child: Icon(Icons.palette_outlined, color: Color(0xFF246B52)),
+                child: Icon(Icons.palette_rounded, color: Color(0xFF246B52)),
               ),
               title: Text(
-                'Appearance',
-                style: TextStyle(fontWeight: FontWeight.w700),
+                tr(context, 'Appearance'),
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
-              subtitle: Text('Choose light, dark, or system theme'),
+              subtitle: Text(
+                tr(context, 'Choose light, dark, or system theme'),
+              ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
               child: SegmentedButton<ThemeMode>(
-                segments: const [
+                segments: [
                   ButtonSegment(
                     value: ThemeMode.light,
-                    icon: Icon(Icons.light_mode_outlined),
-                    label: Text('Light'),
+                    icon: const Icon(
+                      Icons.light_mode_rounded,
+                      color: Color(0xFFE5A62D),
+                    ),
+                    label: Text(tr(context, 'Light')),
                   ),
                   ButtonSegment(
                     value: ThemeMode.dark,
-                    icon: Icon(Icons.dark_mode_outlined),
-                    label: Text('Dark'),
+                    icon: const Icon(
+                      Icons.dark_mode_rounded,
+                      color: Color(0xFF6979D2),
+                    ),
+                    label: Text(tr(context, 'Dark')),
                   ),
                   ButtonSegment(
                     value: ThemeMode.system,
-                    icon: Icon(Icons.settings_suggest_outlined),
-                    label: Text('System'),
+                    icon: const Icon(
+                      Icons.settings_suggest_rounded,
+                      color: Color(0xFF3B9B86),
+                    ),
+                    label: Text(tr(context, 'System')),
                   ),
                 ],
                 selected: {themeMode},
@@ -80,30 +100,38 @@ class SettingsPage extends StatelessWidget {
       Card(
         child: Column(
           children: [
-            const ListTile(
-              leading: CircleAvatar(
+            ListTile(
+              leading: const CircleAvatar(
                 backgroundColor: Color(0xFFFFEED8),
                 child: Icon(
-                  Icons.notifications_active_outlined,
-                  color: Color(0xFFB56818),
+                  Icons.notifications_active_rounded,
+                  color: Color(0xFFE28A37),
                 ),
               ),
               title: Text(
-                'Reminders',
-                style: TextStyle(fontWeight: FontWeight.w700),
+                tr(context, 'Reminders'),
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
-              subtitle: Text('Shared reminder preferences'),
+              subtitle: Text(tr(context, 'Shared reminder preferences')),
             ),
             const Divider(height: 1, indent: 16, endIndent: 16),
             ListTile(
-              title: const Text('Remind me before'),
-              subtitle: Text(_reminderSummary),
+              leading: const Icon(
+                Icons.schedule_rounded,
+                color: Color(0xFF8B61CC),
+              ),
+              title: Text(tr(context, 'Remind me before')),
+              subtitle: Text(_reminderSummary(context)),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showReminderIntervals(context),
+              onTap: () => _showReminderInterval(context),
             ),
             ListTile(
-              title: const Text('Test notifications'),
-              subtitle: const Text('Preview an expiry reminder'),
+              leading: const Icon(
+                Icons.notifications_active_rounded,
+                color: Color(0xFFE28A37),
+              ),
+              title: Text(tr(context, 'Test notifications')),
+              subtitle: Text(tr(context, 'Preview an expiry reminder')),
               trailing: const Icon(Icons.chevron_right),
               onTap: onTestNotifications,
             ),
@@ -117,36 +145,29 @@ class SettingsPage extends StatelessWidget {
             ListTile(
               leading: const CircleAvatar(
                 backgroundColor: Color(0xFFE7ECFA),
-                child: Icon(Icons.language_rounded, color: Color(0xFF5469AA)),
+                child: Icon(Icons.translate_rounded, color: Color(0xFF3E7BDB)),
               ),
-              title: const Text(
-                'Language',
-                style: TextStyle(fontWeight: FontWeight.w700),
+              title: Text(
+                tr(context, 'Language'),
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
-              subtitle: const Text('English'),
+              subtitle: Text(_languageName(context, languageCode)),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showMessage(
-                context,
-                'English is currently the available language.',
-              ),
+              onTap: () => _showLanguagePicker(context),
             ),
             const Divider(height: 1, indent: 16, endIndent: 16),
             ListTile(
-              leading: const Icon(Icons.backup_outlined),
-              title: const Text('Backup & restore'),
-              subtitle: const Text('Save or restore a local copy'),
-            ),
-            ListTile(
-              title: const Text('Create backup now'),
-              subtitle: const Text('Products, loss history, and reminders'),
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFE4F2E9),
+                child: Icon(Icons.backup_rounded, color: Color(0xFF278765)),
+              ),
+              title: Text(
+                tr(context, 'Backup & restore'),
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              subtitle: Text(tr(context, 'Back up or restore your local data')),
               trailing: const Icon(Icons.chevron_right),
-              onTap: onCreateBackup,
-            ),
-            ListTile(
-              title: const Text('Restore a backup'),
-              subtitle: const Text('Choose a backup saved on this device'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: onRestoreBackup,
+              onTap: () => _showDataMenu(context),
             ),
           ],
         ),
@@ -154,11 +175,12 @@ class SettingsPage extends StatelessWidget {
       const SizedBox(height: 18),
       Center(
         child: Text(
-          'PRODUCT CARE  ·  YOUR HOME, WELL CARED FOR',
+          tr(context, 'PRODUCT CARE  ·  YOUR HOME, WELL CARED FOR'),
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontSize: 10,
-            letterSpacing: 1.2,
+            letterSpacing: 1.0,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -166,61 +188,140 @@ class SettingsPage extends StatelessWidget {
     ],
   );
 
-  String get _reminderSummary {
-    final sortedDays = reminderDays.toList()..sort((a, b) => b.compareTo(a));
-    if (sortedDays.isEmpty) return 'Off';
-    return sortedDays
-        .map((days) => '$days ${days == 1 ? 'day' : 'days'}')
-        .join(' · ');
+  String _reminderSummary(BuildContext context) {
+    if (reminderDays.isEmpty) return tr(context, 'Off');
+    final days = reminderDays.first;
+    return tr(context, days == 1 ? '{days} day before' : '{days} days before', {
+      'days': days,
+    });
   }
 
-  void _showReminderIntervals(BuildContext pageContext) {
-    final selectedDays = Set<int>.from(reminderDays);
+  String _languageName(BuildContext context, String code) => switch (code) {
+    'hi' => tr(context, 'Hindi'),
+    'gu' => tr(context, 'Gujarati'),
+    _ => tr(context, 'English'),
+  };
+
+  void _showReminderInterval(BuildContext pageContext) {
     showModalBottomSheet<void>(
       context: pageContext,
       useSafeArea: true,
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, setSheetState) => Padding(
-          padding: const EdgeInsets.all(22),
+      isScrollControlled: true,
+      builder: (_) => ReminderIntervalSheet(
+        reminderDays: reminderDays,
+        onSave: (days) {
+          onReminderDaysChanged({days});
+          _showMessage(
+            pageContext,
+            tr(pageContext, 'Shared reminders updated for this session.'),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showLanguagePicker(BuildContext pageContext) {
+    var selected = languageCode;
+    showDialog<void>(
+      context: pageContext,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(tr(dialogContext, 'Choose language')),
+          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+          content: RadioGroup<String>(
+            groupValue: selected,
+            onChanged: (value) {
+              if (value != null) setDialogState(() => selected = value);
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final option in const [
+                  ('en', 'English', 'English'),
+                  ('hi', 'Hindi', 'हिन्दी'),
+                  ('gu', 'Gujarati', 'ગુજરાતી'),
+                ])
+                  RadioListTile<String>(
+                    value: option.$1,
+                    title: Text(option.$3),
+                    subtitle: Text(tr(dialogContext, option.$2)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(tr(dialogContext, 'Cancel')),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                onLanguageChanged(selected);
+              },
+              child: Text(tr(dialogContext, 'Done')),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDataMenu(BuildContext pageContext) {
+    showModalBottomSheet<void>(
+      context: pageContext,
+      useSafeArea: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Reminder intervals',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFE4F2E9),
+                  child: Icon(Icons.backup_rounded, color: Color(0xFF278765)),
+                ),
+                title: Text(tr(sheetContext, 'Create backup now')),
+                subtitle: Text(
+                  tr(sheetContext, 'Products, loss history, and reminder days'),
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  onCreateBackup();
+                },
               ),
-              const SizedBox(height: 8),
-              const Text('Shared intervals for expiry and service reminders.'),
-              const SizedBox(height: 12),
-              for (final days in [1, 2, 3, 5, 7, 14, 30])
-                CheckboxListTile(
-                  value: selectedDays.contains(days),
-                  onChanged: (selected) => setSheetState(() {
-                    if (selected == true) {
-                      selectedDays.add(days);
-                    } else {
-                      selectedDays.remove(days);
-                    }
-                  }),
-                  title: Text('$days ${days == 1 ? 'day' : 'days'} before'),
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFE7ECFA),
+                  child: Icon(Icons.restore_rounded, color: Color(0xFF3E7BDB)),
                 ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    onReminderDaysChanged(Set<int>.unmodifiable(selectedDays));
-                    Navigator.pop(sheetContext);
-                    _showMessage(
-                      pageContext,
-                      'Shared reminders updated for this session.',
-                    );
-                  },
-                  child: const Text('Done'),
+                title: Text(tr(sheetContext, 'Restore a backup')),
+                subtitle: Text(
+                  tr(sheetContext, 'Choose a backup saved on this device'),
                 ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  onRestoreBackup();
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFE3F4E8),
+                  child: Icon(
+                    Icons.table_view_rounded,
+                    color: Color(0xFF16834A),
+                  ),
+                ),
+                title: Text(tr(sheetContext, 'Export and share Excel')),
+                subtitle: Text(
+                  tr(sheetContext, 'Share products and stock-loss data'),
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  onExportExcel();
+                },
               ),
             ],
           ),

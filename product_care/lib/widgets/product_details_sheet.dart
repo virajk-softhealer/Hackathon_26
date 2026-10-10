@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../app/app_localizations.dart';
 import '../app/app_theme.dart';
 import '../models/product.dart';
-import '../utils/date_formatters.dart';
 import 'product_icon.dart';
 
 class ProductDetailsSheet extends StatelessWidget {
@@ -53,7 +53,7 @@ class ProductDetailsSheet extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${product.brand} · ${product.category}',
+                    '${product.brand} · ${tr(context, product.category)}',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -67,20 +67,20 @@ class ProductDetailsSheet extends StatelessWidget {
         if (product.kind != ProductKind.service)
           _DetailLine(
             icon: Icons.inventory_2_outlined,
-            label: 'Available stock',
+            label: tr(context, 'Available stock'),
             value: '${product.quantity} ${product.unit}',
           ),
         if (product.expiry != null)
           _DetailLine(
             icon: Icons.event_outlined,
-            label: 'Best before',
-            value: formatFullDate(product.expiry!),
+            label: tr(context, 'Best before'),
+            value: localizedFullDate(context, product.expiry!),
           ),
         if (product.service != null)
           _DetailLine(
             icon: Icons.build_outlined,
-            label: 'Next service',
-            value: formatFullDate(product.service!),
+            label: tr(context, 'Next service'),
+            value: localizedFullDate(context, product.service!),
           ),
         if (product.kind != ProductKind.service &&
             (product.quantity == 0 ||
@@ -95,7 +95,7 @@ class ProductDetailsSheet extends StatelessWidget {
                 onRestock();
               },
               icon: const Icon(Icons.shopping_bag_outlined),
-              label: const Text('Restock product'),
+              label: Text(tr(context, 'Restock product')),
             ),
           ),
         ],
@@ -109,7 +109,7 @@ class ProductDetailsSheet extends StatelessWidget {
                 onRecordLoss();
               },
               icon: const Icon(Icons.remove_shopping_cart_outlined),
-              label: const Text('Record stock loss'),
+              label: Text(tr(context, 'Record stock loss')),
             ),
           ),
         ],
@@ -122,7 +122,7 @@ class ProductDetailsSheet extends StatelessWidget {
               onRemove();
             },
             icon: const Icon(Icons.delete_outline),
-            label: const Text('Remove product'),
+            label: Text(tr(context, 'Remove product')),
           ),
         ),
       ],

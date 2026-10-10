@@ -2,15 +2,19 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../app/app_localizations.dart';
 import '../app/app_theme.dart';
 import '../models/product.dart';
 import '../services/backup_service.dart';
+import '../services/data_export_service.dart';
 import '../services/product_store.dart';
 import '../services/restock_search_service.dart';
 import '../widgets/product_details_sheet.dart';
 import '../widgets/product_form_sheet.dart';
 import '../widgets/product_care_splash.dart';
+import '../widgets/product_care_navigation_bar.dart';
 import '../widgets/record_loss_dialog.dart';
 import '../widgets/restock_search_sheet.dart';
 import 'alerts_page.dart';
@@ -23,11 +27,13 @@ class ProductCareHome extends StatefulWidget {
   const ProductCareHome({
     required this.themeMode,
     required this.onThemeChanged,
+    required this.onLanguageChanged,
     super.key,
   });
 
   final ThemeMode themeMode;
   final ValueChanged<ThemeMode> onThemeChanged;
+  final ValueChanged<String> onLanguageChanged;
 
   @override
   State<ProductCareHome> createState() => _ProductCareHomeState();
@@ -36,12 +42,13 @@ class ProductCareHome extends StatefulWidget {
 class _ProductCareHomeState extends State<ProductCareHome> {
   ProductStore _store = ProductStore();
   final BackupService _backupService = const BackupService();
+  final DataExportService _dataExportService = const DataExportService();
   final RestockSearchService _restockSearchService =
       const RestockSearchService();
   final PageController _pageController = PageController();
   int _selectedTab = 0;
   String _productFilter = 'All';
-  Set<int> _reminderDays = {1, 3};
+  Set<int> _reminderDays = {3};
   bool _showSplash = true;
   bool _splashDelayDone = false;
   bool _storeLoaded = false;
@@ -104,6 +111,9 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         onReminderDaysChanged: _updateReminderDays,
         onCreateBackup: _createBackup,
         onRestoreBackup: _restoreBackup,
+        onExportExcel: _exportExcel,
+        languageCode: _store.languageCode,
+        onLanguageChanged: _updateLanguage,
       ),
     ];
 
@@ -122,34 +132,12 @@ class _ProductCareHomeState extends State<ProductCareHome> {
               backgroundColor: brandGreen,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add),
-              label: const Text('Add product'),
+              label: Text(tr(context, 'Add product')),
             )
           : null,
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: ProductCareNavigationBar(
         selectedIndex: _selectedTab,
-        onDestinationSelected: _selectTab,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.grid_view_rounded),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined),
-            label: 'Products',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            label: 'Calendar',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.notifications_none_rounded),
-            label: 'Alerts',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.tune_rounded),
-            label: 'Settings',
-          ),
-        ],
+        onSelected: _selectTab,
       ),
     );
   }
@@ -179,7 +167,9 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     if (product == null || !mounted) return;
     setState(() => _store.addProduct(product));
     await _persistStore();
-    _showMessage('${product.name} added to your products.');
+    _showMessage(
+      tr(context, '{name} added to your products.', {'name': product.name}),
+    );
   }
 
   void _openProduct(Product product) {
@@ -192,7 +182,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         onRemove: () {
           setState(() => _store.products.remove(product));
           _persistStore();
-          _showMessage('${product.name} removed.');
+          _showMessage(tr(context, '{name} removed.', {'name': product.name}));
         },
         onRestock: () => _showRestockSearch(product),
       ),
@@ -204,13 +194,23 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     if (quantity == null || !mounted) return;
     final recorded = _store.recordLoss(product, quantity);
     if (!recorded) {
-      _showMessage('Stock changed before the loss could be recorded.');
+      _showMessage(
+        tr(context, 'Stock changed before the loss could be recorded.'),
+      );
       return;
     }
     setState(() {});
     await _persistStore();
     _showMessage(
-      '$quantity ${product.unit} recorded as loss. Remaining stock: ${product.quantity}.',
+      tr(
+        context,
+        '{quantity} {unit} recorded as loss. Remaining stock: {remaining}.',
+        {
+          'quantity': quantity,
+          'unit': product.unit,
+          'remaining': product.quantity,
+        },
+      ),
     );
   }
 
@@ -218,21 +218,24 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Scan a product'),
-        content: const Text(
-          'Camera and product recognition are not connected yet. You can add product details manually.',
+        title: Text(tr(context, 'Scan a product')),
+        content: Text(
+          tr(
+            context,
+            'Camera and product recognition are not connected yet. You can add product details manually.',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Close'),
+            child: Text(tr(context, 'Close')),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(dialogContext);
               _addProduct();
             },
-            child: const Text('Enter manually'),
+            child: Text(tr(context, 'Enter manually')),
           ),
         ],
       ),
@@ -248,8 +251,14 @@ class _ProductCareHomeState extends State<ProductCareHome> {
                     product.quantity > 0 &&
                     product.expiry != null),
           )
-          ? 'Reminder preview is not sent: device notifications are not configured yet.'
-          : 'There are no expiry or service dates available to preview.',
+          ? tr(
+              context,
+              'Reminder preview is not sent: device notifications are not configured yet.',
+            )
+          : tr(
+              context,
+              'There are no expiry or service dates available to preview.',
+            ),
     );
   }
 
@@ -259,6 +268,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
       if (!mounted) return;
       _store = loaded;
       _reminderDays = Set<int>.of(loaded.reminderDays);
+      widget.onLanguageChanged(loaded.languageCode);
       _startupMessage = loaded.loadError;
     } on Object catch (_) {
       // Keep the sample session available if the local data file cannot be read.
@@ -275,7 +285,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     final message = _startupMessage;
     if (message != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _showMessage(message);
+        if (mounted) _showMessage(tr(context, message));
       });
     }
   }
@@ -284,7 +294,8 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     try {
       await _store.persist();
     } catch (_) {
-      if (mounted) _showMessage('Could not save local Product Care data.');
+      if (mounted)
+        _showMessage(tr(context, 'Could not save local Product Care data.'));
     }
   }
 
@@ -294,13 +305,42 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     _persistStore();
   }
 
+  void _updateLanguage(String code) {
+    setState(() => _store.setLanguageCode(code));
+    widget.onLanguageChanged(code);
+    _persistStore();
+  }
+
+  Future<void> _exportExcel() async {
+    try {
+      final size = MediaQuery.sizeOf(context);
+      final result = await _dataExportService.exportAndShare(
+        context,
+        _store,
+        Rect.fromLTWH(0, 0, size.width, size.height),
+      );
+      if (!mounted) return;
+      if (result.status == ShareResultStatus.unavailable) {
+        _showMessage(tr(context, 'Sharing is unavailable on this device.'));
+      } else if (result.status == ShareResultStatus.success) {
+        _showMessage(tr(context, 'Excel file shared.'));
+      }
+    } catch (_) {
+      if (mounted)
+        _showMessage(tr(context, 'Excel export could not be created.'));
+    }
+  }
+
   Future<void> _createBackup() async {
     try {
       await _store.persist();
       final file = await _backupService.createBackup(_store);
-      if (mounted) _showMessage('Backup saved: ${_fileName(file)}');
+      if (mounted)
+        _showMessage(
+          tr(context, 'Backup saved: {name}', {'name': _fileName(file)}),
+        );
     } catch (_) {
-      if (mounted) _showMessage('Backup could not be created.');
+      if (mounted) _showMessage(tr(context, 'Backup could not be created.'));
     }
   }
 
@@ -309,7 +349,9 @@ class _ProductCareHomeState extends State<ProductCareHome> {
       final backups = await _backupService.listBackups();
       if (!mounted) return;
       if (backups.isEmpty) {
-        _showMessage('No Product Care backups are saved on this device yet.');
+        _showMessage(
+          tr(context, 'No Product Care backups are saved on this device yet.'),
+        );
         return;
       }
       final selected = await showModalBottomSheet<File>(
@@ -320,10 +362,10 @@ class _ProductCareHomeState extends State<ProductCareHome> {
             shrinkWrap: true,
             padding: const EdgeInsets.all(16),
             children: [
-              const Padding(
+              Padding(
                 padding: EdgeInsets.fromLTRB(8, 8, 8, 12),
                 child: Text(
-                  'Choose a backup to restore',
+                  tr(context, 'Choose a backup to restore'),
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                 ),
               ),
@@ -331,8 +373,8 @@ class _ProductCareHomeState extends State<ProductCareHome> {
                 (file) => ListTile(
                   leading: const Icon(Icons.backup_outlined),
                   title: Text(_fileName(file)),
-                  subtitle: const Text(
-                    'Products, loss history, and reminder days',
+                  subtitle: Text(
+                    tr(context, 'Products, loss history, and reminder days'),
                   ),
                   onTap: () => Navigator.pop(sheetContext, file),
                 ),
@@ -347,18 +389,21 @@ class _ProductCareHomeState extends State<ProductCareHome> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Restore this backup?'),
-          content: const Text(
-            'This replaces the products, stock-loss history, and reminder days currently saved in Product Care.',
+          title: Text(tr(context, 'Restore this backup?')),
+          content: Text(
+            tr(
+              context,
+              'This replaces the products, stock-loss history, and reminder days currently saved in Product Care.',
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancel'),
+              child: Text(tr(context, 'Cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Restore backup'),
+              child: Text(tr(context, 'Restore backup')),
             ),
           ],
         ),
@@ -367,12 +412,26 @@ class _ProductCareHomeState extends State<ProductCareHome> {
       await _store.restore(snapshot);
       if (!mounted) return;
       setState(() => _reminderDays = Set<int>.of(snapshot.reminderDays));
-      _showMessage('Backup restored from ${_fileName(selected)}.');
+      _showMessage(
+        tr(context, 'Backup restored from {name}.', {
+          'name': _fileName(selected),
+        }),
+      );
     } on FormatException catch (error) {
-      if (mounted) _showMessage('Backup was rejected: ${error.message}');
+      if (mounted)
+        _showMessage(
+          tr(context, 'Backup was rejected: {reason}', {
+            'reason': error.message,
+          }),
+        );
     } catch (_) {
       if (mounted) {
-        _showMessage('Backup could not be restored. Your saved data was kept.');
+        _showMessage(
+          tr(
+            context,
+            'Backup could not be restored. Your saved data was kept.',
+          ),
+        );
       }
     }
   }
@@ -381,6 +440,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     await showModalBottomSheet<void>(
       context: context,
       useSafeArea: true,
+      isScrollControlled: true,
       builder: (sheetContext) => RestockSearchSheet(
         product: product,
         onSelectPlatform: (platform) async {
@@ -391,7 +451,8 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         onCopy: () async {
           await _restockSearchService.copyQuery(product);
           if (sheetContext.mounted) Navigator.pop(sheetContext);
-          if (mounted) _showMessage('Product search terms copied.');
+          if (mounted)
+            _showMessage(tr(context, 'Product search terms copied.'));
         },
       ),
     );
@@ -401,18 +462,19 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Could not open that search'),
-        content: const Text(
-          'Try Google Search or copy the product search terms.',
+        title: Text(tr(context, 'Could not open that search')),
+        content: Text(
+          tr(context, 'Try Google Search or copy the product search terms.'),
         ),
         actions: [
           TextButton(
             onPressed: () async {
               await _restockSearchService.copyQuery(product);
               if (dialogContext.mounted) Navigator.pop(dialogContext);
-              if (mounted) _showMessage('Product search terms copied.');
+              if (mounted)
+                _showMessage(tr(context, 'Product search terms copied.'));
             },
-            child: const Text('Copy search terms'),
+            child: Text(tr(context, 'Copy search terms')),
           ),
           FilledButton(
             onPressed: () async {
@@ -422,10 +484,10 @@ class _ProductCareHomeState extends State<ProductCareHome> {
                 product,
               );
               if (!opened && mounted) {
-                _showMessage('Google Search could not be opened.');
+                _showMessage(tr(context, 'Google Search could not be opened.'));
               }
             },
-            child: const Text('Google Search'),
+            child: Text(tr(context, 'Google Search')),
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../app/app_localizations.dart';
 import '../models/product.dart';
 import '../widgets/empty_state_card.dart';
 
@@ -30,21 +31,23 @@ class AlertsPage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'Alerts',
+                      tr(context, 'Alerts'),
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w800),
                     ),
                   ),
                   TextButton(
-                    onPressed: () =>
-                        _showMessage(context, 'All alerts marked as read'),
-                    child: const Text('Mark all read'),
+                    onPressed: () => _showMessage(
+                      context,
+                      tr(context, 'All alerts marked as read'),
+                    ),
+                    child: Text(tr(context, 'Mark all read')),
                   ),
                 ],
               ),
               const SizedBox(height: 5),
               Text(
-                'Expiry and service updates for your products',
+                tr(context, 'Expiry and service updates for your products'),
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -75,7 +78,7 @@ class AlertsPage extends StatelessWidget {
                           Icons.inventory_2_outlined,
                           color: Color(0xFF246B52),
                         ),
-                        title: const Text('Stock loss recorded'),
+                        title: Text(tr(context, 'Stock loss recorded')),
                         subtitle: Text(loss),
                         trailing: const Icon(Icons.done_rounded),
                       ),
@@ -83,15 +86,18 @@ class AlertsPage extends StatelessWidget {
                   ),
                 ),
               ],
-              const Card(
+              Card(
                 child: ListTile(
                   leading: Icon(
                     Icons.notifications_outlined,
                     color: Color(0xFF246B52),
                   ),
-                  title: Text('Reminder scheduling'),
+                  title: Text(tr(context, 'Reminder scheduling')),
                   subtitle: Text(
-                    'Local notification delivery is not configured yet.',
+                    tr(
+                      context,
+                      'Local notification delivery is not configured yet.',
+                    ),
                   ),
                   isThreeLine: true,
                 ),
@@ -148,15 +154,35 @@ class _ReminderAlert extends StatelessWidget {
         ? _daysFromToday(product.service!)
         : product.daysToExpiry!;
     final title = isService
-        ? 'Service reminder: ${product.name}'
-        : 'Expiry reminder: ${product.name}';
+        ? tr(context, 'Service reminder: {name}', {'name': product.name})
+        : tr(context, 'Expiry reminder: {name}', {'name': product.name});
     final message = isService
-        ? '${product.name} ${days <= 0 ? 'is due for service' : 'requires servicing in $days days'}. Review the product details.'
-        : '${product.name} ${days < 0
-              ? 'is past its expiry date'
-              : days == 0
-              ? 'expires today'
-              : 'expires in $days days'}. Review the product details.';
+        ? days <= 0
+              ? tr(
+                  context,
+                  '{name} is due for service. Review the product details.',
+                  {'name': product.name},
+                )
+              : tr(
+                  context,
+                  '{name} requires servicing in {days} days. Review the product details.',
+                  {'name': product.name, 'days': days},
+                )
+        : days < 0
+        ? tr(
+            context,
+            '{name} is past its expiry date. Review the product details.',
+            {'name': product.name},
+          )
+        : days == 0
+        ? tr(context, '{name} expires today. Review the product details.', {
+            'name': product.name,
+          })
+        : tr(
+            context,
+            '{name} expires in {days} days. Review the product details.',
+            {'name': product.name, 'days': days},
+          );
     final iconColor = isService
         ? const Color(0xFF5469AA)
         : const Color(0xFFB56818);

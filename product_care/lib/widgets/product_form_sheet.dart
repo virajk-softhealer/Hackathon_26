@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../app/app_localizations.dart';
 import '../models/product.dart';
-import '../utils/date_formatters.dart';
 
 class ProductFormSheet extends StatefulWidget {
   const ProductFormSheet({super.key});
@@ -52,16 +52,16 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
             ),
           ),
           const SizedBox(height: 18),
-          const Text(
-            'Add a product',
+          Text(
+            tr(context, 'Add a product'),
             style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _name,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              labelText: 'Product name *',
+            decoration: InputDecoration(
+              labelText: tr(context, 'Product name *'),
               prefixIcon: Icon(Icons.inventory_2_outlined),
             ),
           ),
@@ -69,8 +69,8 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
           TextField(
             controller: _brand,
             textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'Brand or manufacturer',
+            decoration: InputDecoration(
+              labelText: tr(context, 'Brand or manufacturer'),
               prefixIcon: Icon(Icons.sell_outlined),
             ),
           ),
@@ -81,7 +81,9 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                 child: DropdownButtonFormField<String>(
                   initialValue: _category,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Category'),
+                  decoration: InputDecoration(
+                    labelText: tr(context, 'Category'),
+                  ),
                   items:
                       const [
                             'Pantry',
@@ -94,7 +96,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                           .map(
                             (value) => DropdownMenuItem(
                               value: value,
-                              child: Text(value),
+                              child: Text(tr(context, value)),
                             ),
                           )
                           .toList(),
@@ -107,11 +109,15 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                 child: DropdownButtonFormField<String>(
                   initialValue: _kind,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Product type'),
+                  decoration: InputDecoration(
+                    labelText: tr(context, 'Product type'),
+                  ),
                   items: const ['Storable', 'Service', 'General']
                       .map(
-                        (value) =>
-                            DropdownMenuItem(value: value, child: Text(value)),
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(tr(context, value)),
+                        ),
                       )
                       .toList(),
                   onChanged: (value) =>
@@ -128,8 +134,8 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                   child: TextField(
                     controller: _quantity,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Quantity',
+                    decoration: InputDecoration(
+                      labelText: tr(context, 'Quantity'),
                       prefixIcon: Icon(Icons.numbers),
                     ),
                   ),
@@ -141,8 +147,8 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(
-                      labelText: 'Unit cost (₹)',
+                    decoration: InputDecoration(
+                      labelText: tr(context, 'Unit cost (₹)'),
                       prefixIcon: Icon(Icons.currency_rupee),
                     ),
                   ),
@@ -158,9 +164,9 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
               label: Text(
                 _date == null
                     ? (_kind == 'Service'
-                          ? 'Choose next service date'
-                          : 'Choose expiry date')
-                    : formatFullDate(_date!),
+                          ? tr(context, 'Choose next service date')
+                          : tr(context, 'Choose expiry date'))
+                    : localizedFullDate(context, _date!),
               ),
             ),
           ],
@@ -169,7 +175,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
             width: double.infinity,
             child: FilledButton(
               onPressed: _save,
-              child: const Text('Save product'),
+              child: Text(tr(context, 'Save product')),
             ),
           ),
         ],
@@ -192,7 +198,9 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     if (_name.text.trim().isEmpty ||
         (_kind != 'Service' && (quantity == null || quantity < 0))) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add a name and a valid quantity.')),
+        SnackBar(
+          content: Text(tr(context, 'Add a name and a valid quantity.')),
+        ),
       );
       return;
     }

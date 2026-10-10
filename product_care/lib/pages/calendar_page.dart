@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../app/app_localizations.dart';
 import '../app/app_theme.dart';
 import '../models/product.dart';
 import '../utils/date_formatters.dart';
@@ -37,13 +38,13 @@ class CalendarPage extends StatelessWidget {
           sliver: SliverList.list(
             children: [
               Text(
-                'Calendar',
+                tr(context, 'Calendar'),
                 style: Theme.of(context).textTheme.headlineSmall
                     ?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 5),
               Text(
-                'Expiry dates and service reminders',
+                tr(context, 'Expiry dates and service reminders'),
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -65,7 +66,7 @@ class CalendarPage extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              monthName(now),
+                              tr(context, monthName(now)),
                               style: const TextStyle(
                                 color: brandGreen,
                                 fontSize: 11,
@@ -84,7 +85,7 @@ class CalendarPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 14),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -96,7 +97,7 @@ class CalendarPage extends StatelessWidget {
                               ),
                             ),
                             SizedBox(height: 3),
-                            Text('Keep an eye on upcoming dates'),
+                            Text(tr(context, 'Keep an eye on upcoming dates')),
                           ],
                         ),
                       ),

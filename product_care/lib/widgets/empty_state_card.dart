@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app/app_theme.dart';
+import '../app/app_localizations.dart';
 
 class EmptyStateCard extends StatelessWidget {
   const EmptyStateCard({
@@ -22,10 +23,13 @@ class EmptyStateCard extends StatelessWidget {
         children: [
           Icon(icon, color: brandGreen, size: 30),
           const SizedBox(height: 10),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(
+            tr(context, title),
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 4),
           Text(
-            message,
+            tr(context, message),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,

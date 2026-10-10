@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app/app_theme.dart';
+import '../app/app_localizations.dart';
 import '../models/product.dart';
 import 'product_icon.dart';
 
@@ -20,14 +21,16 @@ class ProductCard extends StatelessWidget {
         ? const Color(0xFFB56818)
         : brandGreen;
     final status = isService
-        ? 'Service in ${product.service!.difference(DateTime.now()).inDays} days'
+        ? tr(context, 'Service in {days} days', {
+            'days': product.service!.difference(DateTime.now()).inDays,
+          })
         : days == null
-        ? 'No expiry date'
+        ? tr(context, 'No expiry date')
         : days < 0
-        ? 'Expired'
+        ? tr(context, 'Expired')
         : days == 0
-        ? 'Expires today'
-        : 'Expires in $days days';
+        ? tr(context, 'Expires today')
+        : tr(context, 'Expires in {days} days', {'days': days});
 
     return Card(
       child: InkWell(
@@ -54,7 +57,7 @@ class ProductCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '${product.brand} · ${product.category}',
+                      '${product.brand} · ${tr(context, product.category)}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

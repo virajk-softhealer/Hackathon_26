@@ -5,7 +5,6 @@ import 'package:path_provider/path_provider.dart';
 
 import '../data/sample_products.dart';
 import '../models/product.dart';
-import '../utils/date_formatters.dart';
 
 /// Local JSON-backed product repository for the current app version.
 class ProductStore {
@@ -16,7 +15,8 @@ class ProductStore {
 
   final List<Product> products;
   final List<String> losses = [];
-  Set<int> reminderDays = {1, 3};
+  Set<int> reminderDays = {3};
+  String languageCode = 'en';
   File? _dataFile;
   String? loadError;
   Future<void> _writeQueue = Future<void>.value();
@@ -67,6 +67,8 @@ class ProductStore {
 
   void setReminderDays(Set<int> days) => reminderDays = Set<int>.of(days);
 
+  void setLanguageCode(String code) => languageCode = code;
+
   bool recordLoss(Product product, int quantity) {
     if (product.kind == ProductKind.service ||
         quantity < 1 ||
@@ -75,7 +77,7 @@ class ProductStore {
     }
     product.quantity -= quantity;
     losses.add(
-      '${product.name} · $quantity ${product.unit} · ${formatShortDate(DateTime.now())}',
+      '${product.name} · $quantity ${product.unit} · ${DateTime.now().toIso8601String().substring(0, 10)}',
     );
     return true;
   }
@@ -88,6 +90,7 @@ class ProductStore {
     'products': products.map((product) => product.toJson()).toList(),
     'losses': List<String>.of(losses),
     'reminder_days': reminderDays.toList()..sort(),
+    'language_code': languageCode,
   };
 
   Future<void> persist() async {
@@ -115,6 +118,7 @@ class ProductStore {
       ..clear()
       ..addAll(snapshot.losses);
     reminderDays = Set<int>.of(snapshot.reminderDays);
+    languageCode = snapshot.languageCode;
   }
 
   Future<void> _enqueueWrite(
@@ -140,11 +144,13 @@ class ProductCareSnapshot {
     required this.products,
     required this.losses,
     required this.reminderDays,
+    required this.languageCode,
   });
 
   final List<Product> products;
   final List<String> losses;
   final Set<int> reminderDays;
+  final String languageCode;
 
   factory ProductCareSnapshot.fromJson(Map<String, dynamic> json) {
     if (json['format'] != ProductStore.backupFormat ||
@@ -154,9 +160,12 @@ class ProductCareSnapshot {
     final rawProducts = json['products'];
     final rawLosses = json['losses'];
     final rawReminderDays = json['reminder_days'];
+    final rawLanguageCode = json['language_code'] ?? 'en';
     if (rawProducts is! List ||
         rawLosses is! List ||
-        rawReminderDays is! List) {
+        rawReminderDays is! List ||
+        rawLanguageCode is! String ||
+        !const {'en', 'hi', 'gu'}.contains(rawLanguageCode)) {
       throw const FormatException('The backup is missing required data.');
     }
     final products = rawProducts.map((record) {
@@ -175,10 +184,21 @@ class ProductCareSnapshot {
         'The backup contains invalid settings or history.',
       );
     }
+    final decodedReminderDays = rawReminderDays.cast<int>().toSet();
+    final normalizedReminderDays = decodedReminderDays.isEmpty
+        ? {3}
+        : decodedReminderDays.length == 1
+        ? decodedReminderDays
+        : {
+            decodedReminderDays.contains(3)
+                ? 3
+                : decodedReminderDays.reduce((a, b) => a > b ? a : b),
+          };
     return ProductCareSnapshot(
       products: products,
       losses: rawLosses.cast<String>(),
-      reminderDays: rawReminderDays.cast<int>().toSet(),
+      reminderDays: normalizedReminderDays,
+      languageCode: rawLanguageCode,
     );
   }
 
@@ -188,5 +208,6 @@ class ProductCareSnapshot {
     'products': products.map((product) => product.toJson()).toList(),
     'losses': losses,
     'reminder_days': reminderDays.toList()..sort(),
+    'language_code': languageCode,
   };
 }

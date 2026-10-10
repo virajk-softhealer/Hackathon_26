@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app/app_theme.dart';
+import '../app/app_localizations.dart';
 import '../models/product.dart';
 import '../widgets/attention_card.dart';
 import '../widgets/empty_state_card.dart';
@@ -61,7 +62,7 @@ class DashboardPage extends StatelessWidget {
             children: [
               _topBar(context),
               const SizedBox(height: 22),
-              _heroCard(),
+              _heroCard(context),
               const SizedBox(height: 24),
               SectionHeading(
                 'Your overview',
@@ -187,7 +188,7 @@ class DashboardPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                greeting,
+                tr(context, greeting),
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 14,
@@ -195,7 +196,7 @@ class DashboardPage extends StatelessWidget {
               ),
               const SizedBox(height: 3),
               Text(
-                'Product Care',
+                tr(context, 'Product Care'),
                 style: Theme.of(context).textTheme.headlineSmall
                     ?.copyWith(fontWeight: FontWeight.w800),
               ),
@@ -237,7 +238,7 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _heroCard() => Container(
+  Widget _heroCard(BuildContext context) => Container(
     padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(24),
@@ -256,15 +257,17 @@ class DashboardPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'A little care goes a long way',
+                  Text(
+                    tr(context, 'A little care goes a long way'),
                     style: TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     expiringCount == 0
-                        ? 'You’re all caught up.'
-                        : '$expiringCount ${expiringCount == 1 ? 'item needs' : 'items need'} a little attention',
+                        ? tr(context, 'You’re all caught up.')
+                        : tr(context, '{count} items need a little attention', {
+                            'count': expiringCount,
+                          }),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -296,8 +299,8 @@ class DashboardPage extends StatelessWidget {
           ),
           onPressed: onOpenProducts,
           icon: const Icon(Icons.arrow_forward_rounded, size: 17),
-          label: const Text(
-            'Review products',
+          label: Text(
+            tr(context, 'Review products'),
             style: TextStyle(fontWeight: FontWeight.w700),
           ),
         ),
@@ -363,7 +366,7 @@ class _MetricCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                label,
+                tr(context, label),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -374,7 +377,7 @@ class _MetricCard extends StatelessWidget {
               if (subtitle != null) ...[
                 const SizedBox(height: 2),
                 Text(
-                  subtitle!,
+                  tr(context, subtitle!),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -428,7 +431,7 @@ class _QuickAction extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    tr(context, title),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -438,7 +441,7 @@ class _QuickAction extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    subtitle,
+                    tr(context, subtitle),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(

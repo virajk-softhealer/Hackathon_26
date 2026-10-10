@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../app/app_localizations.dart';
 import '../app/app_theme.dart';
 
 class ProductCareSplash extends StatefulWidget {
@@ -81,8 +82,8 @@ class _ProductCareSplashState extends State<ProductCareSplash>
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Product Care',
+              Text(
+                tr(context, 'Product Care'),
                 style: TextStyle(
                   color: brandInk,
                   fontSize: 26,
@@ -91,8 +92,8 @@ class _ProductCareSplashState extends State<ProductCareSplash>
                 ),
               ),
               const SizedBox(height: 7),
-              const Text(
-                'Your home, well cared for',
+              Text(
+                tr(context, 'Your home, well cared for'),
                 style: TextStyle(color: Color(0xFF69766F), fontSize: 13),
               ),
             ],
