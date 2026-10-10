@@ -23,8 +23,53 @@ class ProductCareLocalizations {
     final translated = _translations[locale.languageCode]?[source] ?? source;
     return args.entries.fold(
       translated,
-      (text, entry) => text.replaceAll('{${entry.key}}', '${entry.value}'),
+      (text, entry) {
+        final val = (entry.key == 'unit' && entry.value is String)
+            ? _translateUnit(entry.value as String)
+            : '${entry.value}';
+        return text.replaceAll('{${entry.key}}', val);
+      },
     );
+  }
+
+  String _translateUnit(String unit) {
+    final trimmed = unit.trim();
+    if (trimmed.isEmpty) return trimmed;
+    final dict = _translations[locale.languageCode];
+    if (dict != null) {
+      if (dict.containsKey(trimmed)) return dict[trimmed]!;
+      final lower = trimmed.toLowerCase();
+      if (dict.containsKey(lower)) return dict[lower]!;
+      const unitAliasMap = {
+        'unit': 'units',
+        'piece': 'pieces',
+        'packet': 'packets',
+        'bottle': 'bottles',
+        'box': 'boxes',
+        'bag': 'bags',
+        'gm': 'g',
+        'gms': 'g',
+        'gram': 'g',
+        'grams': 'g',
+        'kilo': 'kg',
+        'kgs': 'kg',
+        'kilogram': 'kg',
+        'kilograms': 'kg',
+        'litre': 'L',
+        'litres': 'L',
+        'liter': 'L',
+        'liters': 'L',
+        'l': 'L',
+        'ml': 'mL',
+        'milliliter': 'mL',
+        'millilitres': 'mL',
+      };
+      final mapped = unitAliasMap[lower];
+      if (mapped != null && dict.containsKey(mapped)) {
+        return dict[mapped]!;
+      }
+    }
+    return trimmed;
   }
 
   static const Map<String, Map<String, String>> _translations = {
@@ -212,15 +257,21 @@ class ProductCareLocalizations {
       'Scan': 'स्कैन',
       'Out of stock': 'स्टॉक समाप्त',
       'units': 'इकाइयां',
+      'unit': 'इकाई',
       'pieces': 'टुकड़े',
+      'piece': 'टुकड़ा',
       'kg': 'किग्रा',
       'g': 'ग्राम',
       'L': 'लीटर',
       'mL': 'मिली',
       'packets': 'पैकेट',
+      'packet': 'पैकेट',
       'bottles': 'बोतलें',
+      'bottle': 'बोतल',
       'boxes': 'डिब्बे',
+      'box': 'डिब्बा',
       'bags': 'थैलियां',
+      'bag': 'थैली',
       'dozen': 'दर्जन',
       'sets': 'सेट',
       'other': 'अन्य',
@@ -389,6 +440,11 @@ class ProductCareLocalizations {
       'Packaging': 'पैकेजिंग',
       'Origin': 'उत्पत्ति स्थान',
       'No Internet Connection': 'कोई इंटरनेट कनेक्शन नहीं',
+      'No Internet Connection, Use Manual Offline or connect to internet to fetch product details.':
+          'कोई इंटरनेट कनेक्शन नहीं, ऑफ़लाइन मैन्युअल उपयोग करें या उत्पाद विवरण प्राप्त करने के लिए इंटरनेट से कनेक्ट करें।',
+      'No Internet Connection, Use Manual Offline':
+          'कोई इंटरनेट कनेक्शन नहीं, ऑफ़लाइन मैन्युअल उपयोग करें',
+      'Use Manual Offline': 'ऑफ़लाइन मैन्युअल उपयोग करें',
       'An active internet connection is required to fetch product details and images from Open Food Facts. Would you like to scan offline or try again?':
           'ओपन फूड फैक्ट्स से उत्पाद विवरण और छवियां प्राप्त करने के लिए इंटरनेट कनेक्शन आवश्यक है। क्या आप ऑफ़लाइन स्कैन करना चाहते हैं या पुनः प्रयास करना चाहते हैं?',
       'Scan Offline': 'ऑफ़लाइन स्कैन करें',
@@ -584,15 +640,21 @@ class ProductCareLocalizations {
       'Scan': 'સ્કેન',
       'Out of stock': 'સ્ટોક ખાલી',
       'units': 'એકમ',
+      'unit': 'એકમ',
       'pieces': 'ટુકડા',
+      'piece': 'ટુકડો',
       'kg': 'કિલો',
       'g': 'ગ્રામ',
       'L': 'લિટર',
       'mL': 'મિલી',
       'packets': 'પેકેટ',
+      'packet': 'પેકેટ',
       'bottles': 'બોટલ',
+      'bottle': 'બોટલ',
       'boxes': 'બોક્સ',
+      'box': 'બોક્સ',
       'bags': 'થેલીઓ',
+      'bag': 'થેલી',
       'dozen': 'ડઝન',
       'sets': 'સેટ',
       'other': 'અન્ય',
@@ -767,6 +829,11 @@ class ProductCareLocalizations {
       'Packaging': 'પેકેજિંગ',
       'Origin': 'ઉત્પત્તિ સ્થાન',
       'No Internet Connection': 'ઇન્ટરનેટ કનેક્શન નથી',
+      'No Internet Connection, Use Manual Offline or connect to internet to fetch product details.':
+          'ઇન્ટરનેટ કનેક્શન નથી, ઑફલાઇન મેન્યુઅલ વાપરો અથવા ઉત્પાદન વિગતો મેળવવા ઇન્ટરનેટથી કનેક્ટ કરો.',
+      'No Internet Connection, Use Manual Offline':
+          'ઇન્ટરનેટ કનેક્શન નથી, ઑફલાઇન મેન્યુઅલ વાપરો',
+      'Use Manual Offline': 'ઑફલાઇન મેન્યુઅલ વાપરો',
       'An active internet connection is required to fetch product details and images from Open Food Facts. Would you like to scan offline or try again?':
           'ઓપન ફૂડ ફેક્ટ્સમાંથી ઉત્પાદનની વિગતો અને ફોટા મેળવવા માટે ઇન્ટરનેટ કનેક્શન જરૂરી છે. શું તમે ઑફલાઇન સ્કેન કરવા માંગો છો કે ફરી પ્રયાસ કરવો છે?',
       'Scan Offline': 'ઑફલાઇન સ્કેન કરો',
@@ -811,3 +878,6 @@ String localizedShortDate(BuildContext context, DateTime date) =>
 
 String localizedFullDate(BuildContext context, DateTime date) =>
     '${date.day} ${tr(context, monthName(date))} ${date.year}';
+
+String localizedUnit(BuildContext context, String unit) =>
+    ProductCareLocalizations.of(context)._translateUnit(unit);

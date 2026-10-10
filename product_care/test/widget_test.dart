@@ -500,4 +500,57 @@ void main() {
     // Confirmed count should still be 1 because draft requires verification
     expect(store.products.where((p) => p.isConfirmed).length, equals(1));
   });
+
+  test('Stock decrease messages and unit measurements are localized language-wise', () {
+    final hi = ProductCareLocalizations(const Locale('hi'));
+    final gu = ProductCareLocalizations(const Locale('gu'));
+
+    // 1. Stock loss message properly localizes units in Hindi & Gujarati
+    final hiMsg = hi.translate(
+      '{quantity} {unit} recorded as loss. Remaining stock: {remaining}.',
+      {'quantity': 2, 'unit': 'packets', 'remaining': 8},
+    );
+    expect(hiMsg, equals('2 पैकेट की हानि दर्ज। शेष स्टॉक: 8।'));
+
+    final guMsg = gu.translate(
+      '{quantity} {unit} recorded as loss. Remaining stock: {remaining}.',
+      {'quantity': 1, 'unit': 'pieces', 'remaining': 4},
+    );
+    expect(guMsg, equals('1 ટુકડાનું નુકસાન નોંધાયું. બાકી જથ્થો: 4.'));
+
+    // Singular and plural units are mapped correctly
+    final hiUnitMsg = hi.translate(
+      'Available: {quantity} {unit}',
+      {'quantity': 5, 'unit': 'units'},
+    );
+    expect(hiUnitMsg, equals('उपलब्ध: 5 इकाइयां'));
+
+    final guUnitMsg = gu.translate(
+      'Available: {quantity} {unit}',
+      {'quantity': 1, 'unit': 'unit'},
+    );
+    expect(guUnitMsg, equals('ઉપલબ્ધ: 1 એકમ'));
+  });
+
+  test('AI Scan offline internet connection prompt strings translate accurately', () {
+    final hi = ProductCareLocalizations(const Locale('hi'));
+    final gu = ProductCareLocalizations(const Locale('gu'));
+
+    expect(
+      hi.translate('No Internet Connection, Use Manual Offline'),
+      equals('कोई इंटरनेट कनेक्शन नहीं, ऑफ़लाइन मैन्युअल उपयोग करें'),
+    );
+    expect(
+      gu.translate('No Internet Connection, Use Manual Offline'),
+      equals('ઇન્ટરનેટ કનેક્શન નથી, ઑફલાઇન મેન્યુઅલ વાપરો'),
+    );
+    expect(
+      hi.translate('Use Manual Offline'),
+      equals('ऑफ़लाइन मैन्युअल उपयोग करें'),
+    );
+    expect(
+      gu.translate('Use Manual Offline'),
+      equals('ઑફલાઇન મેન્યુઅલ વાપરો'),
+    );
+  });
 }

@@ -410,7 +410,7 @@ class _AiProductScannerPageState extends State<AiProductScannerPage> {
                         ],
                         const SizedBox(height: 4),
                         Text(
-                          '${item.category} • ${item.quantity} ${item.unit}',
+                          '${tr(context, item.category)} • ${item.quantity} ${localizedUnit(context, item.unit)}',
                           style: TextStyle(
                             fontSize: 11,
                             color: Theme.of(context)
@@ -889,7 +889,7 @@ class _EditProductDetailsModalState extends State<_EditProductDetailsModal> {
                       items: _predefinedUnits
                           .map((u) => DropdownMenuItem(
                                 value: u,
-                                child: Text(u),
+                                child: Text(localizedUnit(context, u)),
                               ))
                           .toList(),
                       onChanged: (val) =>

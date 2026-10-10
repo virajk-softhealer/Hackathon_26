@@ -133,7 +133,7 @@ class _RecordLossDialogState extends State<_RecordLossDialog> {
               autofocus: true,
               decoration: InputDecoration(
                 labelText: tr(context, 'Quantity to mark as lost'),
-                suffixText: product.unit,
+                suffixText: localizedUnit(context, product.unit),
                 errorText: _error,
               ),
               onChanged: (_) {
@@ -342,7 +342,7 @@ class _AddStockDialogState extends State<_AddStockDialog> {
               autofocus: true,
               decoration: InputDecoration(
                 labelText: tr(context, 'Quantity to add'),
-                suffixText: product.unit,
+                suffixText: localizedUnit(context, product.unit),
                 errorText: _error,
               ),
               onChanged: (_) {

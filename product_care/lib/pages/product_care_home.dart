@@ -648,7 +648,62 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     _showMessage(message);
   }
 
+  Future<bool> _checkInternetBeforeAiScan() async {
+    final hasInternet = await OpenFoodFactsService.hasInternetConnection();
+    if (hasInternet) return true;
+    if (!mounted) return false;
+
+    while (mounted) {
+      final choice = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(
+            Icons.wifi_off_rounded,
+            color: Color(0xFFE28A37),
+            size: 40,
+          ),
+          title: Text(tr(ctx, 'No Internet Connection')),
+          content: Text(
+            tr(
+              ctx,
+              'No Internet Connection, Use Manual Offline or connect to internet to fetch product details.',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'cancel'),
+              child: Text(tr(ctx, 'Cancel')),
+            ),
+            FilledButton.tonal(
+              onPressed: () => Navigator.pop(ctx, 'offline'),
+              child: Text(tr(ctx, 'Use Manual Offline')),
+            ),
+            FilledButton.icon(
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              onPressed: () => Navigator.pop(ctx, 'retry'),
+              label: Text(tr(ctx, 'Try Again')),
+            ),
+          ],
+        ),
+      );
+
+      if (choice == 'retry') {
+        final rechecked = await OpenFoodFactsService.hasInternetConnection();
+        if (rechecked) return true;
+        continue;
+      } else if (choice == 'offline') {
+        return true;
+      } else {
+        return false;
+      }
+    }
+    return false;
+  }
+
   Future<void> _openAiOcrScanner() async {
+    final canProceed = await _checkInternetBeforeAiScan();
+    if (!canProceed || !mounted) return;
+
     final scannedProducts = await Navigator.push<List<AiOcrProductItem>>(
       context,
       MaterialPageRoute(
