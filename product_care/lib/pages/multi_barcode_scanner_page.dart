@@ -404,7 +404,7 @@ class _MultiBarcodeScannerPageState extends State<MultiBarcodeScannerPage> {
                                         )
                                       else if (item.foodFactsResult?.found == true)
                                         Text(
-                                          '${item.foodFactsResult!.brand?.isNotEmpty == true ? '${item.foodFactsResult!.brand} · ' : ''}Open Food Facts (${item.code})',
+                                          '${item.foodFactsResult!.brand?.isNotEmpty == true ? '${item.foodFactsResult!.brand} · ' : ''}${item.foodFactsResult!.parsedQuantity != null ? '${item.foodFactsResult!.parsedQuantity} ${item.foodFactsResult!.parsedUnit} · ' : ''}Open Food Facts (${item.code})',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(

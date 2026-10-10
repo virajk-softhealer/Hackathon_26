@@ -388,6 +388,11 @@ class ProductCareLocalizations {
       'Ingredients': 'सामग्री',
       'Packaging': 'पैकेजिंग',
       'Origin': 'उत्पत्ति स्थान',
+      'No Internet Connection': 'कोई इंटरनेट कनेक्शन नहीं',
+      'An active internet connection is required to fetch product details and images from Open Food Facts. Would you like to scan offline or try again?':
+          'ओपन फूड फैक्ट्स से उत्पाद विवरण और छवियां प्राप्त करने के लिए इंटरनेट कनेक्शन आवश्यक है। क्या आप ऑफ़लाइन स्कैन करना चाहते हैं या पुनः प्रयास करना चाहते हैं?',
+      'Scan Offline': 'ऑफ़लाइन स्कैन करें',
+      'Try Again': 'पुनः प्रयास करें',
     },
     'gu': {
       'Home': 'હોમ',
@@ -751,6 +756,11 @@ class ProductCareLocalizations {
       'Ingredients': 'સામગ્રી',
       'Packaging': 'પેકેજિંગ',
       'Origin': 'ઉત્પત્તિ સ્થાન',
+      'No Internet Connection': 'ઇન્ટરનેટ કનેક્શન નથી',
+      'An active internet connection is required to fetch product details and images from Open Food Facts. Would you like to scan offline or try again?':
+          'ઓપન ફૂડ ફેક્ટ્સમાંથી ઉત્પાદનની વિગતો અને ફોટા મેળવવા માટે ઇન્ટરનેટ કનેક્શન જરૂરી છે. શું તમે ઑફલાઇન સ્કેન કરવા માંગો છો કે ફરી પ્રયાસ કરવો છે?',
+      'Scan Offline': 'ઑફલાઇન સ્કેન કરો',
+      'Try Again': 'ફરી પ્રયાસ કરો',
     },
   };
 }

@@ -12,6 +12,7 @@ import 'package:product_care/app/app_localizations.dart';
 import 'package:product_care/app/product_care_app.dart';
 import 'package:product_care/models/product.dart';
 import 'package:product_care/pages/multi_barcode_scanner_page.dart';
+import 'package:product_care/services/open_food_facts_service.dart';
 import 'package:product_care/services/product_store.dart';
 
 void main() {
@@ -283,5 +284,49 @@ void main() {
       if (standardCategory.isNotEmpty) standardCategory,
     };
     expect(deduplicated.where((c) => c == 'Dairy').length, equals(1));
+  });
+
+  test('OpenFoodFactsService parses quantity and UOM properly', () {
+    // "48 g" -> 48, 'g'
+    final (qty1, unit1) = OpenFoodFactsService.parseQuantityAndUnit('48 g');
+    expect(qty1, equals(48));
+    expect(unit1, equals('g'));
+
+    // "48g" -> 48, 'g'
+    final (qty1b, unit1b) = OpenFoodFactsService.parseQuantityAndUnit('48g');
+    expect(qty1b, equals(48));
+    expect(unit1b, equals('g'));
+
+    // "500 ml" -> 500, 'mL'
+    final (qty2, unit2) = OpenFoodFactsService.parseQuantityAndUnit('500 ml');
+    expect(qty2, equals(500));
+    expect(unit2, equals('mL'));
+
+    // "1.5 kg" -> 1500, 'g'
+    final (qty3, unit3) = OpenFoodFactsService.parseQuantityAndUnit('1.5 kg');
+    expect(qty3, equals(1500));
+    expect(unit3, equals('g'));
+
+    // Multipack "6 x 330 ml" -> 1980, 'mL'
+    final (qty4, unit4) = OpenFoodFactsService.parseQuantityAndUnit('6 x 330 ml');
+    expect(qty4, equals(1980));
+    expect(unit4, equals('mL'));
+
+    // Null or empty -> 1, 'units'
+    final (qty5, unit5) = OpenFoodFactsService.parseQuantityAndUnit(null);
+    expect(qty5, equals(1));
+    expect(unit5, equals('units'));
+  });
+
+  test('No internet scanner alert strings translate correctly in Hindi and Gujarati', () {
+    final hi = ProductCareLocalizations(const Locale('hi'));
+    expect(hi.translate('No Internet Connection'), equals('कोई इंटरनेट कनेक्शन नहीं'));
+    expect(hi.translate('Scan Offline'), equals('ऑफ़लाइन स्कैन करें'));
+    expect(hi.translate('Try Again'), equals('पुनः प्रयास करें'));
+
+    final gu = ProductCareLocalizations(const Locale('gu'));
+    expect(gu.translate('No Internet Connection'), equals('ઇન્ટરનેટ કનેક્શન નથી'));
+    expect(gu.translate('Scan Offline'), equals('ઑફલાઇન સ્કેન કરો'));
+    expect(gu.translate('Try Again'), equals('ફરી પ્રયાસ કરો'));
   });
 }

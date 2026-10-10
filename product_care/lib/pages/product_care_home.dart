@@ -460,7 +460,62 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     );
   }
 
+  Future<bool> _checkInternetBeforeScanning() async {
+    final hasInternet = await OpenFoodFactsService.hasInternetConnection();
+    if (hasInternet) return true;
+    if (!mounted) return false;
+
+    while (mounted) {
+      final choice = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(
+            Icons.wifi_off_rounded,
+            color: Color(0xFFE28A37),
+            size: 40,
+          ),
+          title: Text(tr(ctx, 'No Internet Connection')),
+          content: Text(
+            tr(
+              ctx,
+              'An active internet connection is required to fetch product details and images from Open Food Facts. Would you like to scan offline or try again?',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'cancel'),
+              child: Text(tr(ctx, 'Cancel')),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'offline'),
+              child: Text(tr(ctx, 'Scan Offline')),
+            ),
+            FilledButton.icon(
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              onPressed: () => Navigator.pop(ctx, 'retry'),
+              label: Text(tr(ctx, 'Try Again')),
+            ),
+          ],
+        ),
+      );
+
+      if (choice == 'retry') {
+        final rechecked = await OpenFoodFactsService.hasInternetConnection();
+        if (rechecked) return true;
+        continue;
+      } else if (choice == 'offline') {
+        return true;
+      } else {
+        return false;
+      }
+    }
+    return false;
+  }
+
   Future<void> _openMultiBarcodeScanner() async {
+    final canProceed = await _checkInternetBeforeScanning();
+    if (!canProceed || !mounted) return;
+
     final scannedItems = await Navigator.push<List<ScannedBarcodeItem>>(
       context,
       MaterialPageRoute(
@@ -488,6 +543,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
               expiry: product.expiry,
             ));
           }
+          product.quantity = product.batches.fold(0, (sum, b) => sum + b.quantity);
         } else {
           product.quantity += item.quantity;
         }
@@ -508,16 +564,20 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         final productCategory = (facts.category != null && facts.category!.isNotEmpty)
             ? facts.category!
             : 'Other';
-        final productUnit = (facts.quantityText != null && facts.quantityText!.isNotEmpty)
-            ? facts.quantityText!
-            : 'units';
+
+        // Proper quantity & UOM parsing: e.g. "48 g" -> 48 quantity & 'g' unit
+        final (parsedQty, parsedUom) =
+            OpenFoodFactsService.parseQuantityAndUnit(facts.quantityText);
+        final baseQuantity = facts.parsedQuantity ?? parsedQty;
+        final productUnit = facts.parsedUnit ?? parsedUom;
+        final totalQuantity = baseQuantity * item.quantity;
 
         final newBatchCode = generateNextBatchNumber(productName, []);
         final newProd = Product(
           name: productName,
           brand: productBrand,
           category: productCategory,
-          quantity: item.quantity,
+          quantity: totalQuantity,
           unit: productUnit,
           kind: ProductKind.storable,
           status: ProductStatus.draft,
@@ -529,7 +589,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
           batches: [
             ProductBatch(
               batchNumber: newBatchCode,
-              quantity: item.quantity,
+              quantity: totalQuantity,
               expiry: DateTime.now().add(const Duration(days: 30)),
             ),
           ],
