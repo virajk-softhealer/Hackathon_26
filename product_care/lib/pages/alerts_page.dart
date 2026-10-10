@@ -20,7 +20,8 @@ class AlertsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reminders = products.expand(_remindersFor).toList();
+    final reminders =
+        products.where((p) => p.isConfirmed).expand(_remindersFor).toList();
     return CustomScrollView(
       slivers: [
         SliverPadding(

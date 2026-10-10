@@ -46,6 +46,7 @@ class ProductStore {
   int get expiringSoon => products
       .where(
         (product) =>
+            product.isConfirmed &&
             product.kind == ProductKind.storable &&
             product.daysToExpiry != null &&
             product.daysToExpiry! >= 0 &&
@@ -57,13 +58,20 @@ class ProductStore {
   int get lowStock => products
       .where(
         (product) =>
-            product.kind != ProductKind.service && product.quantity <= 1,
+            product.isConfirmed &&
+            product.kind != ProductKind.service &&
+            product.quantity <= 1,
       )
       .length;
 
   int get totalUnits => products
-      .where((product) => product.kind != ProductKind.service)
+      .where(
+        (product) =>
+            product.isConfirmed && product.kind != ProductKind.service,
+      )
       .fold(0, (total, product) => total + product.quantity);
+
+  int get draftCount => products.where((product) => product.isDraft).length;
 
   void addProduct(Product product) => products.add(product);
 
@@ -71,6 +79,13 @@ class ProductStore {
     final index = products.indexWhere((entry) => entry.id == product.id);
     if (index < 0) return false;
     products[index] = product;
+    return true;
+  }
+
+  bool confirmProduct(Product product) {
+    final index = products.indexWhere((entry) => entry.id == product.id);
+    if (index < 0) return false;
+    products[index] = product.copyWith(status: ProductStatus.confirmed);
     return true;
   }
 

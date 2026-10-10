@@ -33,24 +33,38 @@ class _ProductsPageState extends State<ProductsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = ['All', 'Expiring', 'In stock', 'Low stock', 'Service'];
+    final draftCount = widget.products.where((p) => p.isDraft).length;
+    final categories = [
+      'All',
+      if (draftCount > 0) 'Drafts',
+      'Expiring',
+      'In stock',
+      'Low stock',
+      'Service',
+    ];
     final shown = widget.products.where((product) {
       final matchesQuery =
           '${product.name} ${product.brand} ${product.category}'
               .toLowerCase()
               .contains(_query.toLowerCase());
       final matchesFilter = switch (_filter) {
+        'Drafts' => product.isDraft,
         'Expiring' =>
-          product.kind == ProductKind.storable &&
+          product.isConfirmed &&
+              product.kind == ProductKind.storable &&
               product.quantity > 0 &&
               product.daysToExpiry != null &&
               product.daysToExpiry! >= 0 &&
               product.daysToExpiry! <= 7,
         'Low stock' =>
-          product.kind != ProductKind.service && product.quantity <= 1,
+          product.isConfirmed &&
+              product.kind != ProductKind.service &&
+              product.quantity <= 1,
         'In stock' =>
-          product.kind != ProductKind.service && product.quantity > 0,
-        'Service' => product.service != null,
+          product.isConfirmed &&
+              product.kind != ProductKind.service &&
+              product.quantity > 0,
+        'Service' => product.isConfirmed && product.service != null,
         _ => true,
       };
       return matchesQuery && matchesFilter;

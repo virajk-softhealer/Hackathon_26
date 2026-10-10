@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app/app_localizations.dart';
+import '../app/app_theme.dart';
 import '../models/product.dart';
 
 class ProductFormSheet extends StatefulWidget {
@@ -39,6 +40,9 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
   late final TextEditingController _quantity;
   late final TextEditingController _cost;
   late final TextEditingController _customUnit;
+  late final TextEditingController _barcode;
+  late final TextEditingController _storageInstructions;
+  late List<ProductBatch> _batches;
   late String _category;
   late String _kind;
   late String _selectedUnit;
@@ -66,6 +70,18 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     _cost = TextEditingController(
       text: product == null || product.cost == 0 ? '' : '${product.cost}',
     );
+    _barcode = TextEditingController(text: product?.barcode ?? '');
+    _storageInstructions =
+        TextEditingController(text: product?.storageInstructions ?? '');
+    _batches = product?.batches
+            .map((b) => ProductBatch(
+                  batchNumber: b.batchNumber,
+                  quantity: b.quantity,
+                  expiry: b.expiry,
+                  createdAt: b.createdAt,
+                ))
+            .toList() ??
+        <ProductBatch>[];
     _category = product?.category ?? 'Pantry';
     _kind = switch (product?.kind) {
       ProductKind.service => 'Service',
@@ -96,6 +112,8 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     _quantity.dispose();
     _cost.dispose();
     _customUnit.dispose();
+    _barcode.dispose();
+    _storageInstructions.dispose();
     super.dispose();
   }
 
@@ -287,16 +305,105 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
           ],
           if (_kind == 'Storable') ...[
             const SizedBox(height: 10),
-            _dateButton(
-              title: tr(context, 'Expiry date'),
-              label: 'Choose expiry date',
-              date: _expiry,
-              onTap: () => _pickDate(
-                _expiry,
-                (date) => _expiry = date,
+            if (_batches.length > 1) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  tr(context, 'Batches Expiration Dates'),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              ..._batches.asMap().entries.map((entry) {
+                final batch = entry.value;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: brandGreen.withValues(alpha: .12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${batch.batchNumber} (${batch.quantity})',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                            color: brandGreen,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _pickDate(
+                            batch.expiry,
+                            (date) => setState(() {
+                              batch.expiry = date;
+                              _expiry = _batches
+                                  .where((b) => b.expiry != null)
+                                  .map((b) => b.expiry!)
+                                  .fold<DateTime?>(
+                                    null,
+                                    (min, d) =>
+                                        min == null || d.isBefore(min) ? d : min,
+                                  );
+                            }),
+                          ),
+                          icon: const Icon(Icons.event_outlined, size: 16),
+                          label: Text(
+                            batch.expiry == null
+                                ? tr(context, 'Choose expiry date')
+                                : localizedFullDate(context, batch.expiry!),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ] else ...[
+              _dateButton(
+                title: tr(context, 'Expiry date'),
+                label: 'Choose expiry date',
+                date: _expiry,
+                onTap: () => _pickDate(
+                  _expiry,
+                  (date) => setState(() {
+                    _expiry = date;
+                    if (_batches.isNotEmpty) {
+                      _batches.first.expiry = date;
+                    }
+                  }),
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
+            TextField(
+              controller: _storageInstructions,
+              decoration: InputDecoration(
+                labelText: tr(context, 'Storage instructions (Optional)'),
+                hintText: tr(context, 'e.g. Keep refrigerated, store below 4°C'),
+                prefixIcon: const Icon(Icons.ac_unit_rounded),
               ),
             ),
           ],
+          const SizedBox(height: 10),
+          TextField(
+            controller: _barcode,
+            decoration: InputDecoration(
+              labelText: tr(context, 'Barcode (Optional)'),
+              prefixIcon: const Icon(Icons.qr_code_2_rounded),
+            ),
+          ),
           if (_kind == 'Service') ...[
             const SizedBox(height: 10),
             _dateButton(
@@ -484,8 +591,11 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     final old = widget.product;
     final batches = <ProductBatch>[];
     if (kind == ProductKind.storable) {
-      if (old != null && old.batches.isNotEmpty) {
-        batches.addAll(old.batches);
+      if (_batches.isNotEmpty) {
+        if (_batches.length == 1) {
+          _batches.first.expiry = _expiry;
+        }
+        batches.addAll(_batches);
       } else if ((quantity ?? 0) > 0 || _expiry != null) {
         batches.add(ProductBatch(
           batchNumber: generateNextBatchNumber(_name.text.trim(), []),
@@ -509,6 +619,15 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
         serviceEnd: kind == ProductKind.service ? _serviceEnd : null,
         cost: cost,
         kind: kind,
+        status: ProductStatus.confirmed,
+        barcode: _barcode.text.trim().isNotEmpty
+            ? _barcode.text.trim()
+            : old?.barcode,
+        storageInstructions: _storageInstructions.text.trim().isNotEmpty
+            ? _storageInstructions.text.trim()
+            : old?.storageInstructions,
+        imageUrl: old?.imageUrl,
+        additionalDetails: old?.additionalDetails ?? const {},
         batches: batches,
       ),
     );

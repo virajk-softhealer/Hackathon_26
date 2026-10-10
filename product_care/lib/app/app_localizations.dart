@@ -347,6 +347,47 @@ class ProductCareLocalizations {
           'यह फ़ाइल प्रोडक्ट केयर बैकअप नहीं है।',
       'Product Care Excel export': 'प्रोडक्ट केयर Excel निर्यात',
       'Product inventory and stock-loss data': 'उत्पाद सूची और स्टॉक हानि डेटा',
+      'Draft': 'ड्राफ्ट',
+      'Drafts': 'ड्राफ्ट्स',
+      'Draft Product · Verification Required': 'ड्राफ्ट उत्पाद · सत्यापन आवश्यक',
+      'Scanned via barcode. Verify details, set expiry if needed, and confirm to activate reminders.':
+          'बारकोड से स्कैन किया गया। विवरण जांचें, आवश्यकता होने पर समाप्ति तिथि सेट करें और पुष्टि करें।',
+      'This product was scanned via barcode and is not yet confirmed. Please verify details, set expiry if needed, and confirm to activate alerts and stock tracking.':
+          'यह उत्पाद बारकोड से स्कैन किया गया है और अभी तक पुष्ट नहीं है। विवरण जांचें, समाप्ति तिथि सेट करें और अलर्ट सक्रिय करने के लिए पुष्टि करें।',
+      'Verify & Confirm Product': 'उत्पाद सत्यापित और पुष्ट करें',
+      'Verify & Confirm': 'सत्यापित और पुष्ट करें',
+      '{name} verified and confirmed! Reminders are now active.':
+          '{name} सत्यापित और पुष्ट हो गया! रिमाइंडर अब सक्रिय हैं।',
+      '{count} scanned items need verification':
+          '{count} स्कैन किए गए आइटम को सत्यापन की आवश्यकता है',
+      'Tap to view and confirm draft products':
+          'ड्राफ्ट उत्पाद देखने और पुष्ट करने के लिए टैप करें',
+      '{count} scanned items processed ({existing} added to stock, {newItems} draft products created for verification).':
+          '{count} स्कैन किए गए आइटम संसाधित ({existing} स्टॉक में जोड़े गए, {newItems} ड्राफ्ट उत्पाद सत्यापन के लिए बने)।',
+      '{newItems} draft products created from barcode scan. Please verify them.':
+          'बारकोड स्कैन से {newItems} ड्राफ्ट उत्पाद बने। कृपया उन्हें सत्यापित करें।',
+      '{count} scanned items added to existing stock.':
+          '{count} स्कैन किए गए आइटम मौजूदा स्टॉक में जोड़े गए।',
+      'tap date to change': 'तारीख बदलने के लिए टैप करें',
+      'Batches Expiration Dates': 'बैच समाप्ति तिथियाँ',
+      'Storage instructions': 'भंडारण निर्देश',
+      'Storage instructions (Optional)': 'भंडारण निर्देश (वैकल्पिक)',
+      'e.g. Keep refrigerated, store below 4°C':
+          'उदा. फ्रिज में रखें, 4°C से कम तापमान पर रखें',
+      'Barcode': 'बारकोड',
+      'Barcode (Optional)': 'बारकोड (वैकल्पिक)',
+      'Additional details ({count})': 'अतिरिक्त विवरण ({count})',
+      'Change expiry date': 'समाप्ति तारीख बदलें',
+      'Set expiry': 'समाप्ति तारीख सेट करें',
+      'Expiry date for batch {batch} updated to {date}.':
+          'बैच {batch} की समाप्ति तारीख {date} पर अपडेट की गई।',
+      'Expiry date for {name} updated to {date}.':
+          '{name} की समाप्ति तारीख {date} पर अपडेट की गई।',
+      'Nutri-Score': 'न्यूट्रि-स्कोर',
+      'Allergens': 'एलर्जेंस',
+      'Ingredients': 'सामग्री',
+      'Packaging': 'पैकेजिंग',
+      'Origin': 'उत्पत्ति स्थान',
     },
     'gu': {
       'Home': 'હોમ',
@@ -669,6 +710,47 @@ class ProductCareLocalizations {
       'Product Care Excel export': 'પ્રોડક્ટ કેર Excel નિકાસ',
       'Product inventory and stock-loss data':
           'ઉત્પાદન યાદી અને જથ્થાના નુકસાનનો ડેટા',
+      'Draft': 'ડ્રાફ્ટ',
+      'Drafts': 'ડ્રાફ્ટ્સ',
+      'Draft Product · Verification Required': 'ડ્રાફ્ટ ઉત્પાદન · ચકાસણી જરૂરી',
+      'Scanned via barcode. Verify details, set expiry if needed, and confirm to activate reminders.':
+          'બારકોડથી સ્કેન કરેલ. વિગતો ચકાસો, જરૂર જણાય તો સમાપ્તિ તારીખ સેટ કરો અને રિમાઇન્ડર સક્રિય કરવા પુષ્ટિ કરો.',
+      'This product was scanned via barcode and is not yet confirmed. Please verify details, set expiry if needed, and confirm to activate alerts and stock tracking.':
+          'આ ઉત્પાદન બારકોડ દ્વારા સ્કેન થયેલ છે અને હજુ પુષ્ટ થયેલ નથી. વિગતો ચકાસો, સમાપ્તિ તારીખ સેટ કરો અને એલર્ટ સક્રિય કરવા પુષ્ટિ કરો.',
+      'Verify & Confirm Product': 'ઉત્પાદન ચકાસો અને પુષ્ટ કરો',
+      'Verify & Confirm': 'ચકાસો અને પુષ્ટ કરો',
+      '{name} verified and confirmed! Reminders are now active.':
+          '{name} ચકાસાયેલ અને પુષ્ટ થયેલ છે! રિમાઇન્ડર્સ હવે સક્રિય છે.',
+      '{count} scanned items need verification':
+          '{count} સ્કેન કરેલ વસ્તુઓને ચકાસણીની જરૂર છે',
+      'Tap to view and confirm draft products':
+          'ડ્રાફ્ટ ઉત્પાદનો જોવા અને પુષ્ટ કરવા ટેપ કરો',
+      '{count} scanned items processed ({existing} added to stock, {newItems} draft products created for verification).':
+          '{count} સ્કેન કરેલ વસ્તુઓ પ્રોસેસ થઈ ({existing} સ્ટોકમાં ઉમેરાઈ, {newItems} ડ્રાફ્ટ ઉત્પાદનો ચકાસણી માટે બન્યા).',
+      '{newItems} draft products created from barcode scan. Please verify them.':
+          'બારકોડ સ્કેનથી {newItems} ડ્રાફ્ટ ઉત્પાદનો બન્યા. કૃપા કરીને તેમને ચકાસો.',
+      '{count} scanned items added to existing stock.':
+          '{count} સ્કેન કરેલ વસ્તુઓ વર્તમાન સ્ટોકમાં ઉમેરાઈ.',
+      'tap date to change': 'તારીખ બદલવા માટે ટેપ કરો',
+      'Batches Expiration Dates': 'બેચ સમાપ્તિ તારીખો',
+      'Storage instructions': 'સંગ્રહ માટેની સૂચનાઓ',
+      'Storage instructions (Optional)': 'સંગ્રહ માટેની સૂચનાઓ (વૈકલ્પિક)',
+      'e.g. Keep refrigerated, store below 4°C':
+          'દા.ત. ફ્રિજમાં રાખો, 4°C થી નીચે સંગ્રહ કરો',
+      'Barcode': 'બારકોડ',
+      'Barcode (Optional)': 'બારકોડ (વૈકલ્પિક)',
+      'Additional details ({count})': 'વધારાની વિગતો ({count})',
+      'Change expiry date': 'સમાપ્તિ તારીખ બદલો',
+      'Set expiry': 'સમાપ્તિ તારીખ સેટ કરો',
+      'Expiry date for batch {batch} updated to {date}.':
+          'બેચ {batch} ની સમાપ્તિ તારીખ {date} પર અપડેટ થઈ.',
+      'Expiry date for {name} updated to {date}.':
+          '{name} ની સમાપ્તિ તારીખ {date} પર અપડેટ થઈ.',
+      'Nutri-Score': 'ન્યુટ્રિ-સ્કોર',
+      'Allergens': 'એલર્જન્સ',
+      'Ingredients': 'સામગ્રી',
+      'Packaging': 'પેકેજિંગ',
+      'Origin': 'ઉત્પત્તિ સ્થાન',
     },
   };
 }

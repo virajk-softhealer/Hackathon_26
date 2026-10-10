@@ -12,6 +12,7 @@ import 'package:product_care/app/app_localizations.dart';
 import 'package:product_care/app/product_care_app.dart';
 import 'package:product_care/models/product.dart';
 import 'package:product_care/pages/multi_barcode_scanner_page.dart';
+import 'package:product_care/services/product_store.dart';
 
 void main() {
   testWidgets('ProductCareApp loads smoke test', (WidgetTester tester) async {
@@ -128,5 +129,114 @@ void main() {
     expect(hi.translate('Multi-Barcode Scanner'), equals('मल्टी-बारकोड स्कैनर'));
     final gu = ProductCareLocalizations(const Locale('gu'));
     expect(gu.translate('Multi-Barcode Scanner'), equals('મલ્ટી-બારકોડ સ્કેનર'));
+  });
+
+  test('Draft products are excluded from store counts until confirmed', () {
+    final exp = DateTime.now().add(const Duration(days: 2));
+
+    final draftProduct = Product(
+      name: 'Unverified Milk',
+      brand: 'Dairy',
+      category: 'Pantry',
+      quantity: 4,
+      unit: 'L',
+      kind: ProductKind.storable,
+      expiry: exp,
+      status: ProductStatus.draft,
+    );
+
+    final confirmedProduct = Product(
+      name: 'Verified Bread',
+      brand: 'Bakery',
+      category: 'Pantry',
+      quantity: 1,
+      unit: 'pack',
+      kind: ProductKind.storable,
+      expiry: exp,
+      status: ProductStatus.confirmed,
+    );
+
+    expect(draftProduct.isDraft, isTrue);
+    expect(draftProduct.isConfirmed, isFalse);
+    expect(confirmedProduct.isConfirmed, isTrue);
+
+    final store = ProductStore();
+    store.products
+      ..clear()
+      ..addAll([draftProduct, confirmedProduct]);
+
+    // expiringSoon only counts confirmed products
+    expect(store.expiringSoon, equals(1));
+
+    // lowStock only counts confirmed products
+    expect(store.lowStock, equals(1));
+
+    // totalUnits only counts confirmed products (1 unit from bread, 0 from milk)
+    expect(store.totalUnits, equals(1));
+
+    // draftCount is 1
+    expect(store.draftCount, equals(1));
+
+    // Confirm draft product
+    final success = store.confirmProduct(draftProduct);
+    expect(success, isTrue);
+
+    // Now both products are confirmed
+    expect(store.draftCount, equals(0));
+    expect(store.expiringSoon, equals(2));
+    expect(store.totalUnits, equals(5)); // 4 + 1
+  });
+
+  test('Draft verification localizations translate correctly in Hindi and Gujarati', () {
+    final hi = ProductCareLocalizations(const Locale('hi'));
+    expect(hi.translate('Draft'), equals('ड्राफ्ट'));
+    expect(hi.translate('Verify & Confirm'), equals('सत्यापित और पुष्ट करें'));
+
+    final gu = ProductCareLocalizations(const Locale('gu'));
+    expect(gu.translate('Draft'), equals('ડ્રાફ્ટ'));
+    expect(gu.translate('Verify & Confirm'), equals('ચકાસો અને પુષ્ટ કરો'));
+  });
+
+  test('Batch expiration date can be updated and updates product earliest expiry', () {
+    final batchDate1 = DateTime(2026, 10, 15);
+    final batchDate2 = DateTime(2026, 10, 20);
+
+    final product = Product(
+      name: 'Milk',
+      brand: 'Amul',
+      category: 'Dairy',
+      quantity: 5,
+      unit: 'L',
+      kind: ProductKind.storable,
+      barcode: '8901262010014',
+      storageInstructions: 'Keep refrigerated below 4C',
+      additionalDetails: {'Nutri-Score': 'Grade B', 'Allergens': 'Milk'},
+      batches: [
+        ProductBatch(batchNumber: 'MILK-00001', quantity: 2, expiry: batchDate1),
+        ProductBatch(batchNumber: 'MILK-00002', quantity: 3, expiry: batchDate2),
+      ],
+    );
+
+    // Initial earliest expiry is batch 1
+    expect(product.expiry, equals(batchDate1));
+    expect(product.barcode, equals('8901262010014'));
+    expect(product.storageInstructions, equals('Keep refrigerated below 4C'));
+    expect(product.additionalDetails['Nutri-Score'], equals('Grade B'));
+
+    // Update batch 1 expiry date to later than batch 2
+    final newDate1 = DateTime(2026, 10, 25);
+    final updated = product.updateBatchExpiry('MILK-00001', newDate1);
+    expect(updated, isTrue);
+
+    // Now earliest active expiry shifts to batch 2!
+    expect(product.expiry, equals(batchDate2));
+
+    // Serialization preserves all new fields and batch dates
+    final json = product.toJson();
+    final restored = Product.fromJson(json);
+    expect(restored.barcode, equals('8901262010014'));
+    expect(restored.storageInstructions, equals('Keep refrigerated below 4C'));
+    expect(restored.additionalDetails['Allergens'], equals('Milk'));
+    expect(restored.batches.first.expiry, equals(newDate1));
   });
 }

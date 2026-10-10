@@ -12,6 +12,7 @@ import '../app/app_theme.dart';
 import '../models/product.dart';
 import '../services/backup_service.dart';
 import '../services/data_export_service.dart';
+import '../services/open_food_facts_service.dart';
 import '../services/product_store.dart';
 import '../services/reminder_notification_service.dart';
 import '../services/restock_search_service.dart';
@@ -284,11 +285,17 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     showModalBottomSheet<void>(
       context: context,
       useSafeArea: true,
+      isScrollControlled: true,
       builder: (_) => ProductDetailsSheet(
         product: product,
         onRecordLoss: () => _recordLoss(product),
         onAddStock: () => _addStock(product),
         onEdit: () => _editProduct(product),
+        onConfirm: () => _confirmProduct(product),
+        onUpdateBatchExpiry: (batch, newDate) =>
+            _updateBatchExpiry(product, batch, newDate),
+        onUpdateProductExpiry: (newDate) =>
+            _updateProductExpiry(product, newDate),
         onRemove: () {
           setState(() => _store.products.remove(product));
           _persistStore();
@@ -298,6 +305,76 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         onRestock: () => _showRestockSearch(product),
       ),
     );
+  }
+
+  Future<void> _updateBatchExpiry(
+    Product product,
+    ProductBatch batch,
+    DateTime newExpiry,
+  ) async {
+    product.updateBatchExpiry(batch.batchNumber, newExpiry);
+    setState(() {});
+    await _persistStore();
+    if (!mounted) return;
+    await _rescheduleNotifications();
+    if (mounted) {
+      _showMessage(
+        tr(
+          context,
+          'Expiry date for batch {batch} updated to {date}.',
+          {
+            'batch': batch.batchNumber,
+            'date': localizedFullDate(context, newExpiry),
+          },
+        ),
+      );
+    }
+  }
+
+  Future<void> _updateProductExpiry(Product product, DateTime newExpiry) async {
+    product.expiry = newExpiry;
+    setState(() {});
+    await _persistStore();
+    if (!mounted) return;
+    await _rescheduleNotifications();
+    if (mounted) {
+      _showMessage(
+        tr(
+          context,
+          'Expiry date for {name} updated to {date}.',
+          {
+            'name': product.name,
+            'date': localizedFullDate(context, newExpiry),
+          },
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmProduct(Product product) async {
+    final confirmed = _store.confirmProduct(product);
+    if (!confirmed) return;
+    setState(() {});
+    await _persistStore();
+    if (!mounted) return;
+    if (_hasReminderDate(product)) {
+      await _rescheduleNotifications(requestPermission: true);
+      await _notificationService.checkAndTriggerImmediateAlert(
+        product: product.copyWith(status: ProductStatus.confirmed),
+        store: _store,
+      );
+    } else {
+      await _rescheduleNotifications();
+    }
+    if (mounted) {
+      _showMessage(
+        tr(
+          context,
+          '{name} verified and confirmed! Reminders are now active.',
+          {'name': product.name},
+        ),
+      );
+    }
   }
 
   Future<void> _addStock(Product product) async {
@@ -415,14 +492,35 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         }
         addedToExisting += item.quantity;
       } else {
-        final newBatchCode = generateNextBatchNumber(item.code, []);
+        OpenFoodFactsResult? facts = item.foodFactsResult;
+        if (facts == null || !facts.found) {
+          facts = await OpenFoodFactsService.lookupBarcode(item.code);
+        }
+
+        final productName = (facts.name != null && facts.name!.isNotEmpty)
+            ? facts.name!
+            : item.code;
+        final productBrand = facts.brand ?? '';
+        final productCategory = (facts.category != null && facts.category!.isNotEmpty)
+            ? facts.category!
+            : 'Other';
+        final productUnit = (facts.quantityText != null && facts.quantityText!.isNotEmpty)
+            ? facts.quantityText!
+            : 'units';
+
+        final newBatchCode = generateNextBatchNumber(productName, []);
         final newProd = Product(
-          name: item.code,
-          brand: '',
-          category: 'Other',
+          name: productName,
+          brand: productBrand,
+          category: productCategory,
           quantity: item.quantity,
-          unit: 'units',
+          unit: productUnit,
           kind: ProductKind.storable,
+          status: ProductStatus.draft,
+          barcode: item.code,
+          imageUrl: facts.imageUrl,
+          storageInstructions: facts.storageInstructions,
+          additionalDetails: facts.additionalDetails,
           expiry: DateTime.now().add(const Duration(days: 30)),
           batches: [
             ProductBatch(
@@ -443,17 +541,35 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     await _rescheduleNotifications();
     if (!mounted) return;
 
-    _showMessage(
-      tr(
+    final String message;
+    if (newProductsCreated > 0 && addedToExisting > 0) {
+      message = tr(
         context,
-        '{count} scanned items processed ({existing} added to stock, {newItems} new products created).',
+        '{count} scanned items processed ({existing} added to stock, {newItems} draft products created for verification).',
         {
           'count': scannedItems.length,
           'existing': addedToExisting,
           'newItems': newProductsCreated,
         },
-      ),
-    );
+      );
+    } else if (newProductsCreated > 0) {
+      message = tr(
+        context,
+        '{newItems} draft products created from barcode scan. Please verify them.',
+        {
+          'newItems': newProductsCreated,
+        },
+      );
+    } else {
+      message = tr(
+        context,
+        '{count} scanned items added to existing stock.',
+        {
+          'count': scannedItems.length,
+        },
+      );
+    }
+    _showMessage(message);
   }
 
   Future<void> _showNotificationStatus() async {

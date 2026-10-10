@@ -141,6 +141,7 @@ class ReminderNotificationService {
     var storeChanged = false;
 
     for (final product in store.products) {
+      if (!product.isConfirmed) continue;
       for (final event in _eventsFor(product)) {
         final eventDate = _dateAtMidnight(event.date);
         for (final leadDays in <int>{...store.reminderDays, 0}) {
@@ -198,6 +199,7 @@ class ReminderNotificationService {
     required ProductStore store,
   }) async {
     if (!_initialized) return;
+    if (!product.isConfirmed) return;
     if (!await hasPermission()) return;
     final language = ProductCareLocalizations(Locale(store.languageCode));
     final now = _dateAtMidnight(DateTime.now());

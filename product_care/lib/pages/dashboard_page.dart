@@ -41,7 +41,12 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final attention = products.where((product) {
+    final confirmedProducts =
+        products.where((product) => product.isConfirmed).toList();
+    final draftProducts =
+        products.where((product) => product.isDraft).toList();
+
+    final attention = confirmedProducts.where((product) {
       final expiryNeedsAttention =
           product.kind == ProductKind.storable &&
           product.quantity > 0 &&
@@ -64,6 +69,69 @@ class DashboardPage extends StatelessWidget {
               _topBar(context),
               const SizedBox(height: 22),
               _heroCard(context),
+              if (draftProducts.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: onOpenProducts,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3D6),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE5B842)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.pending_actions_rounded,
+                          color: Color(0xFF946200),
+                          size: 22,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                tr(
+                                  context,
+                                  '{count} scanned items need verification',
+                                  {'count': draftProducts.length},
+                                ),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                  color: Color(0xFF5E3F00),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                tr(
+                                  context,
+                                  'Tap to view and confirm draft products',
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF7C5800),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14,
+                          color: Color(0xFF946200),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               SectionHeading(
                 'Your overview',
@@ -80,7 +148,7 @@ class DashboardPage extends StatelessWidget {
                     children: [
                       _MetricCard(
                         label: 'Products',
-                        value: '${products.length}',
+                        value: '${confirmedProducts.length}',
                         icon: Icons.inventory_2_outlined,
                         width: width,
                         onTap: onOpenProducts,

@@ -5,17 +5,20 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../app/app_localizations.dart';
 import '../app/app_theme.dart';
 import '../models/product.dart';
+import '../services/open_food_facts_service.dart';
 
 class ScannedBarcodeItem {
   ScannedBarcodeItem({
     required this.code,
     this.quantity = 1,
     this.matchedProduct,
+    this.foodFactsResult,
   });
 
   final String code;
   int quantity;
   final Product? matchedProduct;
+  OpenFoodFactsResult? foodFactsResult;
 }
 
 class MultiBarcodeScannerPage extends StatefulWidget {
@@ -69,12 +72,22 @@ class _MultiBarcodeScannerPageState extends State<MultiBarcodeScannerPage> {
             break;
           }
         }
-        _scannedMap[code] = ScannedBarcodeItem(
+        final newItem = ScannedBarcodeItem(
           code: code,
           quantity: 1,
           matchedProduct: match,
         );
+        _scannedMap[code] = newItem;
         addedAny = true;
+
+        if (match == null) {
+          OpenFoodFactsService.lookupBarcode(code).then((result) {
+            if (mounted && result.found) {
+              newItem.foodFactsResult = result;
+              setState(() {});
+            }
+          });
+        }
       }
     }
 
@@ -366,7 +379,10 @@ class _MultiBarcodeScannerPageState extends State<MultiBarcodeScannerPage> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        matched?.name ?? item.code,
+                                        matched?.name ??
+                                            (item.foodFactsResult?.name?.isNotEmpty == true
+                                                ? item.foodFactsResult!.name!
+                                                : item.code),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
@@ -377,6 +393,29 @@ class _MultiBarcodeScannerPageState extends State<MultiBarcodeScannerPage> {
                                       if (matched != null)
                                         Text(
                                           'Code: ${item.code} · In stock: ${matched.quantity} ${matched.unit}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                        )
+                                      else if (item.foodFactsResult?.found == true)
+                                        Text(
+                                          '${item.foodFactsResult!.brand?.isNotEmpty == true ? '${item.foodFactsResult!.brand} · ' : ''}Open Food Facts (${item.code})',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: Color(0xFF2E7D32),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        )
+                                      else
+                                        Text(
+                                          'Code: ${item.code}',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(

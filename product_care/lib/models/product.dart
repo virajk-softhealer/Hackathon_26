@@ -1,5 +1,7 @@
 enum ProductKind { storable, service, general }
 
+enum ProductStatus { confirmed, draft }
+
 class ProductBatch {
   ProductBatch({
     required this.batchNumber,
@@ -10,7 +12,7 @@ class ProductBatch {
 
   final String batchNumber;
   int quantity;
-  final DateTime? expiry;
+  DateTime? expiry;
   final DateTime createdAt;
 
   int? get daysToExpiry {
@@ -77,10 +79,18 @@ class Product {
     this.serviceEnd,
     this.cost = 0,
     this.kind = ProductKind.storable,
+    this.status = ProductStatus.confirmed,
+    this.barcode,
+    this.imageUrl,
+    this.storageInstructions,
+    Map<String, String>? additionalDetails,
     List<ProductBatch>? batches,
   })  : id = id ?? _newId(),
         _quantity = quantity < 0 ? 0 : quantity,
         _baseExpiry = expiry,
+        additionalDetails = additionalDetails != null
+            ? Map<String, String>.of(additionalDetails)
+            : <String, String>{},
         batches = batches != null
             ? List<ProductBatch>.of(batches)
             : <ProductBatch>[];
@@ -91,12 +101,20 @@ class Product {
   final String category;
   int _quantity;
   final String unit;
-  final DateTime? _baseExpiry;
+  DateTime? _baseExpiry;
   final DateTime? service;
   final DateTime? serviceEnd;
   final double cost;
   final ProductKind kind;
+  final ProductStatus status;
+  final String? barcode;
+  final String? imageUrl;
+  final String? storageInstructions;
+  final Map<String, String> additionalDetails;
   final List<ProductBatch> batches;
+
+  bool get isDraft => status == ProductStatus.draft;
+  bool get isConfirmed => status == ProductStatus.confirmed;
 
   int get quantity {
     if (kind == ProductKind.storable && batches.isNotEmpty) {
@@ -136,6 +154,33 @@ class Product {
     return _baseExpiry;
   }
 
+  set expiry(DateTime? newExpiry) {
+    _baseExpiry = newExpiry;
+    if (kind == ProductKind.storable && batches.isNotEmpty) {
+      if (batches.length == 1) {
+        batches.first.expiry = newExpiry;
+      } else {
+        final withStock = batches.where((b) => b.quantity > 0).toList();
+        if (withStock.isNotEmpty) {
+          withStock.first.expiry = newExpiry;
+        } else {
+          batches.first.expiry = newExpiry;
+        }
+      }
+    }
+  }
+
+  bool updateBatchExpiry(String batchNumber, DateTime? newExpiry) {
+    for (final b in batches) {
+      if (b.batchNumber == batchNumber) {
+        b.expiry = newExpiry;
+        _baseExpiry = expiry;
+        return true;
+      }
+    }
+    return false;
+  }
+
   ProductBatch? get earliestExpiringBatch {
     if (kind != ProductKind.storable || batches.isEmpty) return null;
     final withStock = batches
@@ -168,6 +213,44 @@ class Product {
     return serviceDay.difference(today).inDays;
   }
 
+  Product copyWith({
+    String? name,
+    String? brand,
+    String? category,
+    int? quantity,
+    String? unit,
+    DateTime? expiry,
+    DateTime? service,
+    DateTime? serviceEnd,
+    double? cost,
+    ProductKind? kind,
+    ProductStatus? status,
+    String? barcode,
+    String? imageUrl,
+    String? storageInstructions,
+    Map<String, String>? additionalDetails,
+    List<ProductBatch>? batches,
+  }) =>
+      Product(
+        id: id,
+        name: name ?? this.name,
+        brand: brand ?? this.brand,
+        category: category ?? this.category,
+        quantity: quantity ?? this.quantity,
+        unit: unit ?? this.unit,
+        expiry: expiry ?? _baseExpiry,
+        service: service ?? this.service,
+        serviceEnd: serviceEnd ?? this.serviceEnd,
+        cost: cost ?? this.cost,
+        kind: kind ?? this.kind,
+        status: status ?? this.status,
+        barcode: barcode ?? this.barcode,
+        imageUrl: imageUrl ?? this.imageUrl,
+        storageInstructions: storageInstructions ?? this.storageInstructions,
+        additionalDetails: additionalDetails ?? this.additionalDetails,
+        batches: batches ?? this.batches,
+      );
+
   static String _newId() =>
       'product_${DateTime.now().microsecondsSinceEpoch}_${_nextGeneratedId++}';
 
@@ -184,6 +267,11 @@ class Product {
             ?.toIso8601String(),
         'cost': cost,
         'kind': kind.name,
+        'status': status.name,
+        'barcode': barcode,
+        'image_url': imageUrl,
+        'storage_instructions': storageInstructions,
+        'additional_details': additionalDetails,
         'batches': batches.map((b) => b.toJson()).toList(),
       };
 
@@ -205,6 +293,22 @@ class Product {
       (value) => value.name.toLowerCase() == rawKind,
     );
     final kind = kindMatch.isNotEmpty ? kindMatch.first : ProductKind.storable;
+
+    final rawStatus = (json['status'] ?? 'confirmed').toString().toLowerCase();
+    final status = rawStatus == 'draft' ? ProductStatus.draft : ProductStatus.confirmed;
+
+    final barcode = json['barcode']?.toString();
+    final imageUrl = json['image_url']?.toString();
+    final storageInstructions = json['storage_instructions']?.toString();
+    final rawDetails = json['additional_details'];
+    final additionalDetails = <String, String>{};
+    if (rawDetails is Map) {
+      for (final entry in rawDetails.entries) {
+        if (entry.key != null && entry.value != null) {
+          additionalDetails[entry.key.toString()] = entry.value.toString();
+        }
+      }
+    }
 
     final rawQuantity = json['quantity'];
     final quantity = rawQuantity is num
@@ -271,6 +375,11 @@ class Product {
       serviceEnd: parsedServiceEnd,
       cost: cost < 0 ? 0 : cost,
       kind: kind,
+      status: status,
+      barcode: barcode,
+      imageUrl: imageUrl,
+      storageInstructions: storageInstructions,
+      additionalDetails: additionalDetails,
       batches: batches,
     );
   }

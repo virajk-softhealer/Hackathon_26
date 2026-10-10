@@ -24,9 +24,10 @@ class CalendarPage extends StatelessWidget {
         products
             .where(
               (product) =>
-                  product.expiry != null ||
-                  product.serviceStartDate != null ||
-                  product.serviceEndDate != null,
+                  product.isConfirmed &&
+                  (product.expiry != null ||
+                      product.serviceStartDate != null ||
+                      product.serviceEndDate != null),
             )
             .toList()
           ..sort((a, b) {
