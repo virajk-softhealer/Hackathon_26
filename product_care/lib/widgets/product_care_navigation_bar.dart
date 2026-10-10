@@ -8,12 +8,14 @@ class ProductCareNavigationBar extends StatelessWidget {
     required this.selectedIndex,
     required this.onSelected,
     this.onScan,
+    this.onAiScan,
     super.key,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onSelected;
   final VoidCallback? onScan;
+  final VoidCallback? onAiScan;
 
   static const _items = [
     (Icons.grid_view_rounded, 'Home', Color(0xFF278765)),
@@ -48,12 +50,68 @@ class ProductCareNavigationBar extends StatelessWidget {
           Expanded(child: _destination(context, 0)),
           Expanded(child: _destination(context, 1)),
           if (onScan != null) Expanded(child: _scanAction(context)),
+          if (onAiScan != null) Expanded(child: _aiScanAction(context)),
           Expanded(child: _destination(context, 2)),
           Expanded(child: _destination(context, 3)),
         ],
       ),
     ),
   );
+
+  Widget _aiScanAction(BuildContext context) {
+    const aiPurple = Color(0xFF7C3AED);
+    return Semantics(
+      button: true,
+      label: tr(context, 'AI Scan'),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: onAiScan,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 1),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: aiPurple.withValues(alpha: 0.38),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 19,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                tr(context, 'AI Scan'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: aiPurple,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _scanAction(BuildContext context) => Semantics(
     button: true,

@@ -393,6 +393,16 @@ class ProductCareLocalizations {
           'ओपन फूड फैक्ट्स से उत्पाद विवरण और छवियां प्राप्त करने के लिए इंटरनेट कनेक्शन आवश्यक है। क्या आप ऑफ़लाइन स्कैन करना चाहते हैं या पुनः प्रयास करना चाहते हैं?',
       'Scan Offline': 'ऑफ़लाइन स्कैन करें',
       'Try Again': 'पुनः प्रयास करें',
+      'AI Scan': 'एआई स्कैन',
+      'AI Product Scanner': 'एआई उत्पाद स्कैनर',
+      'Auto-detect expiry, weight & batch':
+          'समाप्ति, वजन और बैच का स्वतः पता लगाएं',
+      'Take Photo': 'फोटो लें',
+      'From Gallery': 'गैलरी से',
+      'Smart Photo OCR Scanner': 'स्मार्ट फोटो ओसीआर स्कैनर',
+      'Confirm & Add ({count} products)': 'पुष्टि करें और जोड़ें ({count} उत्पाद)',
+      '{count} draft products created via AI OCR scanner. Please verify them.':
+          'एआई ओसीआर स्कैनर से {count} ड्राफ्ट उत्पाद बनाए गए। कृपया उन्हें सत्यापित करें।',
     },
     'gu': {
       'Home': 'હોમ',
@@ -761,6 +771,15 @@ class ProductCareLocalizations {
           'ઓપન ફૂડ ફેક્ટ્સમાંથી ઉત્પાદનની વિગતો અને ફોટા મેળવવા માટે ઇન્ટરનેટ કનેક્શન જરૂરી છે. શું તમે ઑફલાઇન સ્કેન કરવા માંગો છો કે ફરી પ્રયાસ કરવો છે?',
       'Scan Offline': 'ઑફલાઇન સ્કેન કરો',
       'Try Again': 'ફરી પ્રયાસ કરો',
+      'AI Scan': 'એઆઈ સ્કેન',
+      'AI Product Scanner': 'એઆઈ પ્રોડક્ટ સ્કેનર',
+      'Auto-detect expiry, weight & batch': 'સમાપ્તિ, વજન અને બેચ આપોઆપ શોધો',
+      'Take Photo': 'ફોટો પાડો',
+      'From Gallery': 'ગેલેરીમાંથી',
+      'Smart Photo OCR Scanner': 'સ્માર્ટ ફોટો ઓસીઆર સ્કેનર',
+      'Confirm & Add ({count} products)': 'પુષ્ટિ કરો અને ઉમેરો ({count} ઉત્પાદનો)',
+      '{count} draft products created via AI OCR scanner. Please verify them.':
+          'એઆઈ ઓસીઆર સ્કેનરથી {count} ડ્રાફ્ટ ઉત્પાદનો બન્યા. કૃપા કરીને ચકાસો.',
     },
   };
 }

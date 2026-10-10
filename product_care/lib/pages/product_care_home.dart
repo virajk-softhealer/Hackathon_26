@@ -22,6 +22,8 @@ import '../widgets/product_care_splash.dart';
 import '../widgets/product_care_navigation_bar.dart';
 import '../widgets/record_loss_dialog.dart';
 import '../widgets/restock_search_sheet.dart';
+import '../services/ai_ocr_service.dart';
+import 'ai_product_scanner_page.dart';
 import 'alerts_page.dart';
 import 'calendar_page.dart';
 import 'dashboard_page.dart';
@@ -162,6 +164,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
           selectedIndex: _selectedTab,
           onSelected: _selectTab,
           onScan: _openMultiBarcodeScanner,
+          onAiScan: _openAiOcrScanner,
         ),
       ),
     );
@@ -634,6 +637,70 @@ class _ProductCareHomeState extends State<ProductCareHome> {
       );
     }
     _showMessage(message);
+  }
+
+  Future<void> _openAiOcrScanner() async {
+    final scannedProducts = await Navigator.push<List<AiOcrProductItem>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const AiProductScannerPage(),
+      ),
+    );
+
+    if (scannedProducts == null || scannedProducts.isEmpty || !mounted) return;
+
+    var count = 0;
+    // Iterate in reverse so the latest scanned photo appears on top (index 0)
+    for (final item in scannedProducts.reversed) {
+      final defaultExpiry =
+          item.expiry ?? DateTime.now().add(const Duration(days: 30));
+      final batchCode =
+          item.batchNumber != null && item.batchNumber!.isNotEmpty
+              ? item.batchNumber!
+              : generateNextBatchNumber(item.name, []);
+
+      final newProd = Product(
+        name: item.name,
+        brand: item.brand ?? '',
+        category: item.category,
+        quantity: item.quantity,
+        unit: item.unit,
+        kind: ProductKind.storable,
+        status: ProductStatus.draft, // Created as draft for user verification
+        cost: item.cost,
+        barcode: item.barcode,
+        imageUrl: item.imageUrl,
+        expiry: defaultExpiry,
+        storageInstructions: item.storageInstructions ??
+            item.additionalDetails['Storage'] ??
+            '',
+        additionalDetails: item.additionalDetails,
+        batches: [
+          ProductBatch(
+            batchNumber: batchCode,
+            quantity: item.quantity,
+            expiry: defaultExpiry,
+          ),
+        ],
+      );
+
+      _store.addProduct(newProd); // Inserts at index 0!
+      count++;
+    }
+
+    setState(() {});
+    await _persistStore();
+    if (!mounted) return;
+    await _rescheduleNotifications();
+    if (!mounted) return;
+
+    _showMessage(
+      tr(
+        context,
+        '{count} draft products created via AI OCR scanner. Please verify them.',
+        {'count': count},
+      ),
+    );
   }
 
   Future<void> _showNotificationStatus() async {

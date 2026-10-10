@@ -12,6 +12,7 @@ import 'package:product_care/app/app_localizations.dart';
 import 'package:product_care/app/product_care_app.dart';
 import 'package:product_care/models/product.dart';
 import 'package:product_care/pages/multi_barcode_scanner_page.dart';
+import 'package:product_care/services/ai_ocr_service.dart';
 import 'package:product_care/services/open_food_facts_service.dart';
 import 'package:product_care/services/product_store.dart';
 
@@ -328,5 +329,122 @@ void main() {
     expect(gu.translate('No Internet Connection'), equals('ઇન્ટરનેટ કનેક્શન નથી'));
     expect(gu.translate('Scan Offline'), equals('ઑફલાઇન સ્કેન કરો'));
     expect(gu.translate('Try Again'), equals('ફરી પ્રયાસ કરો'));
+  });
+
+  test('AiOcrService extracts expiry, weight, batch, and cost from raw OCR text', () {
+    const ocrSample = '''
+    CADBURY DAIRY MILK
+    CHOCOLATE
+    NET WT: 48g
+    BATCH NO: B20491
+    MFD: 01/26
+    EXP: 25/12/2026
+    MRP: ₹ 45.00
+    INCL. OF ALL TAXES
+    ''';
+
+    final expiry = AiOcrService.extractExpiry(ocrSample);
+    expect(expiry, isNotNull);
+    expect(expiry!.year, equals(2026));
+    expect(expiry.month, equals(12));
+    expect(expiry.day, equals(25));
+
+    final (qty, unit) = AiOcrService.extractWeightAndUnit(ocrSample);
+    expect(qty, equals(48));
+    expect(unit, equals('g'));
+
+    final batch = AiOcrService.extractBatchNumber(ocrSample);
+    expect(batch, equals('B20491'));
+
+    final cost = AiOcrService.extractCost(ocrSample);
+    expect(cost, equals(45.0));
+
+    final (name, brand) = AiOcrService.extractNameAndBrand([
+      'CADBURY',
+      'DAIRY MILK',
+      'CHOCOLATE',
+    ]);
+    expect(name, contains('DAIRY MILK'));
+    expect(brand, equals('CADBURY'));
+
+    // Test text with month name: "BEST BEFORE 15 OCT 2026"
+    final expNamed = AiOcrService.extractExpiry('BEST BEFORE 15 OCT 2026');
+    expect(expNamed, isNotNull);
+    expect(expNamed!.year, equals(2026));
+    expect(expNamed.month, equals(10));
+    expect(expNamed.day, equals(15));
+
+    // Test multi-line date where EXP is on line 0 and date is on line 1:
+    final expMultiLine = AiOcrService.extractExpiry('EXP DATE\n15/10/2026', ['EXP DATE', '15/10/2026']);
+    expect(expMultiLine, isNotNull);
+    expect(expMultiLine!.year, equals(2026));
+    expect(expMultiLine.month, equals(10));
+    expect(expMultiLine.day, equals(15));
+
+    // Test month/year format: "EXP: 10/26"
+    final expMonthYear = AiOcrService.extractExpiry('EXP: 10/26');
+    expect(expMonthYear, isNotNull);
+    expect(expMonthYear!.year, equals(2026));
+    expect(expMonthYear.month, equals(10));
+
+    // Test MRP with Rs. and slash: "MRP RS. 45/-"
+    final cost2 = AiOcrService.extractCost('MRP RS. 45/-');
+    expect(cost2, equals(45.0));
+  });
+
+  test('AI Scan bottom bar translations match in Hindi and Gujarati', () {
+    final hi = ProductCareLocalizations(const Locale('hi'));
+    expect(hi.translate('AI Scan'), equals('एआई स्कैन'));
+    expect(hi.translate('AI Product Scanner'), equals('एआई उत्पाद स्कैनर'));
+
+    final gu = ProductCareLocalizations(const Locale('gu'));
+    expect(gu.translate('AI Scan'), equals('એઆઈ સ્કેન'));
+    expect(gu.translate('AI Product Scanner'), equals('એઆઈ પ્રોડક્ટ સ્કેનર'));
+  });
+
+  test('AiOcrService correctly extracts Expiry Date, MRP, Batch, Weight from columnar packaging sample', () {
+    const packagingSample = '''
+    NET WEIGHT:
+    PKD.:
+    EXPIRY DATE:
+    SERVING PER
+    PACKAGE*/B. NO.:
+    UNIT SALE PRICE :
+    MRP:
+    (INCL OF ALL TAXES)
+    10.00
+    48g
+    18:21
+    21SEP26
+    20JAN27
+    2/U1D27B
+    0.21 PER g
+    ''';
+
+    final lines = packagingSample
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+
+    // 1. Expiry Date must be 20JAN27 (20 Jan 2027), NOT 21SEP26 (Packed date)
+    final expiry = AiOcrService.extractExpiry(packagingSample, lines);
+    expect(expiry, isNotNull);
+    expect(expiry!.year, equals(2027));
+    expect(expiry.month, equals(1));
+    expect(expiry.day, equals(20));
+
+    // 2. Weight must be 48 g
+    final (qty, unit) = AiOcrService.extractWeightAndUnit(packagingSample);
+    expect(qty, equals(48));
+    expect(unit, equals('g'));
+
+    // 3. MRP must be 10.00
+    final cost = AiOcrService.extractCost(packagingSample, lines);
+    expect(cost, equals(10.0));
+
+    // 4. Batch must be 2/U1D27B
+    final batch = AiOcrService.extractBatchNumber(packagingSample, lines);
+    expect(batch, equals('2/U1D27B'));
   });
 }
