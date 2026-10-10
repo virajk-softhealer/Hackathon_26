@@ -7,14 +7,12 @@ class ProductCareNavigationBar extends StatelessWidget {
   const ProductCareNavigationBar({
     required this.selectedIndex,
     required this.onSelected,
-    this.onScan,
     this.onAiScan,
     super.key,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onSelected;
-  final VoidCallback? onScan;
   final VoidCallback? onAiScan;
 
   static const _items = [
@@ -49,7 +47,6 @@ class ProductCareNavigationBar extends StatelessWidget {
         children: [
           Expanded(child: _destination(context, 0)),
           Expanded(child: _destination(context, 1)),
-          if (onScan != null) Expanded(child: _scanAction(context)),
           if (onAiScan != null) Expanded(child: _aiScanAction(context)),
           Expanded(child: _destination(context, 2)),
           Expanded(child: _destination(context, 3)),
@@ -113,53 +110,6 @@ class ProductCareNavigationBar extends StatelessWidget {
     );
   }
 
-  Widget _scanAction(BuildContext context) => Semantics(
-    button: true,
-    label: tr(context, 'Scan item'),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(24),
-      onTap: onScan,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 1),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: brandGreen,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: brandGreen.withValues(alpha: 0.35),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.qr_code_scanner_rounded,
-                size: 20,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              tr(context, 'Scan'),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                color: brandGreen,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
 
   Widget _destination(BuildContext context, int index) {
     final item = _items[index];

@@ -447,4 +447,57 @@ void main() {
     final batch = AiOcrService.extractBatchNumber(packagingSample, lines);
     expect(batch, equals('2/U1D27B'));
   });
+
+  test('Scanned purchases are treated as separate draft product variants', () {
+    final store = ProductStore();
+    store.products.clear();
+    final existing = Product(
+      name: 'Amul Milk',
+      brand: 'Amul',
+      category: 'Dairy',
+      quantity: 1,
+      unit: 'L',
+      kind: ProductKind.storable,
+      status: ProductStatus.confirmed,
+      expiry: DateTime(2026, 10, 15),
+      batches: [
+        ProductBatch(
+          batchNumber: 'AMULMILK-00001',
+          quantity: 1,
+          expiry: DateTime(2026, 10, 15),
+        ),
+      ],
+    );
+    store.addProduct(existing);
+
+    // When another purchase is scanned after 15 days, it should NOT mutate existing stock
+    // but should be created as a separate draft variant
+    final newVariantBatch =
+        generateNextBatchNumber(existing.name, existing.batches);
+    final variant = Product(
+      name: existing.name,
+      brand: existing.brand,
+      category: existing.category,
+      quantity: 1,
+      unit: existing.unit,
+      kind: existing.kind,
+      status: ProductStatus.draft, // Created as separate draft product variant
+      expiry: DateTime(2026, 11, 1),
+      batches: [
+        ProductBatch(
+          batchNumber: newVariantBatch,
+          quantity: 1,
+          expiry: DateTime(2026, 11, 1),
+        ),
+      ],
+    );
+    store.addProduct(variant);
+
+    expect(store.products.length, equals(2));
+    expect(store.products.first.isDraft, isTrue);
+    expect(store.products.first.batches.first.batchNumber,
+        equals('AMULMILK-00002'));
+    // Confirmed count should still be 1 because draft requires verification
+    expect(store.products.where((p) => p.isConfirmed).length, equals(1));
+  });
 }

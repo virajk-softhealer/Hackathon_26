@@ -163,7 +163,6 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         bottomNavigationBar: ProductCareNavigationBar(
           selectedIndex: _selectedTab,
           onSelected: _selectTab,
-          onScan: _openMultiBarcodeScanner,
           onAiScan: _openAiOcrScanner,
         ),
       ),
@@ -536,24 +535,34 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     for (final item in scannedItems.reversed) {
       if (item.matchedProduct != null) {
         final product = item.matchedProduct!;
-        if (product.kind == ProductKind.storable) {
-          if (product.batches.isNotEmpty) {
-            product.batches.last.quantity += item.quantity;
-          } else {
-            product.batches.add(ProductBatch(
-              batchNumber: generateNextBatchNumber(product.name, []),
+        final defaultExpiry =
+            product.expiry ?? DateTime.now().add(const Duration(days: 30));
+        final nextBatchCode =
+            generateNextBatchNumber(product.name, product.batches);
+        final newProd = Product(
+          name: product.name,
+          brand: product.brand,
+          category: product.category,
+          quantity: item.quantity,
+          unit: product.unit,
+          kind: product.kind,
+          status: ProductStatus.draft, // Separate draft product variant for verification
+          cost: product.cost,
+          barcode: product.barcode,
+          imageUrl: product.imageUrl,
+          storageInstructions: product.storageInstructions,
+          additionalDetails: product.additionalDetails,
+          expiry: defaultExpiry,
+          batches: [
+            ProductBatch(
+              batchNumber: nextBatchCode,
               quantity: item.quantity,
-              expiry: product.expiry,
-            ));
-          }
-          product.quantity = product.batches.fold(0, (sum, b) => sum + b.quantity);
-        } else {
-          product.quantity += item.quantity;
-        }
-        // Move recently scanned product to the top of list
-        _store.products.remove(product);
-        _store.products.insert(0, product);
-        addedToExisting += item.quantity;
+              expiry: defaultExpiry,
+            ),
+          ],
+        );
+        _store.addProduct(newProd);
+        newProductsCreated++;
       } else {
         OpenFoodFactsResult? facts = item.foodFactsResult;
         if (facts == null || !facts.found) {
@@ -654,10 +663,14 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     for (final item in scannedProducts.reversed) {
       final defaultExpiry =
           item.expiry ?? DateTime.now().add(const Duration(days: 30));
+      final existingMatches = _store.products.where(
+        (p) => p.name.trim().toLowerCase() == item.name.trim().toLowerCase(),
+      );
+      final existingBatches = existingMatches.expand((p) => p.batches).toList();
       final batchCode =
           item.batchNumber != null && item.batchNumber!.isNotEmpty
               ? item.batchNumber!
-              : generateNextBatchNumber(item.name, []);
+              : generateNextBatchNumber(item.name, existingBatches);
 
       final newProd = Product(
         name: item.name,
