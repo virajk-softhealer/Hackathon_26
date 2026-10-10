@@ -15,6 +15,7 @@ class SettingsPage extends StatelessWidget {
     required this.onCreateBackup,
     required this.onRestoreBackup,
     required this.onExportExcel,
+    this.onExportCsv,
     super.key,
   });
 
@@ -28,6 +29,7 @@ class SettingsPage extends StatelessWidget {
   final VoidCallback onCreateBackup;
   final VoidCallback onRestoreBackup;
   final VoidCallback onExportExcel;
+  final VoidCallback? onExportCsv;
 
   @override
   Widget build(BuildContext context) => ListView(
@@ -314,7 +316,7 @@ class SettingsPage extends StatelessWidget {
                     color: Color(0xFF16834A),
                   ),
                 ),
-                title: Text(tr(sheetContext, 'Export and share Excel')),
+                title: Text(tr(sheetContext, 'Export and share Excel (.xlsx)')),
                 subtitle: Text(
                   tr(sheetContext, 'Share products and stock-loss data'),
                 ),
@@ -323,6 +325,27 @@ class SettingsPage extends StatelessWidget {
                   onExportExcel();
                 },
               ),
+              if (onExportCsv != null)
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFFDEEE9),
+                    child: Icon(
+                      Icons.description_outlined,
+                      color: Color(0xFFD35400),
+                    ),
+                  ),
+                  title: Text(tr(sheetContext, 'Export and share CSV (.csv)')),
+                  subtitle: Text(
+                    tr(
+                      sheetContext,
+                      'Universal comma-separated file with clean dates',
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    onExportCsv?.call();
+                  },
+                ),
             ],
           ),
         ),

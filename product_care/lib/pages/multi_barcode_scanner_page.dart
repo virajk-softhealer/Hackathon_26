@@ -107,12 +107,12 @@ class _MultiBarcodeScannerPageState extends State<MultiBarcodeScannerPage> {
   }
 
   void _confirmAndReturn() {
-    Navigator.pop(context, _scannedMap.values.toList());
+    Navigator.pop(context, _scannedMap.values.toList().reversed.toList());
   }
 
   @override
   Widget build(BuildContext context) {
-    final scannedList = _scannedMap.values.toList();
+    final scannedList = _scannedMap.values.toList().reversed.toList();
     final totalCount =
         scannedList.fold<int>(0, (sum, item) => sum + item.quantity);
 

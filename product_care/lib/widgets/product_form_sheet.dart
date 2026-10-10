@@ -189,14 +189,15 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                   decoration: InputDecoration(
                     labelText: tr(context, 'Category'),
                   ),
-                  items: const [
+                  items: <String>{
                     'Pantry',
                     'Dairy',
                     'Health',
                     'Household',
                     'Appliances',
                     'Other',
-                  ]
+                    if (_category.isNotEmpty) _category,
+                  }
                       .map((value) => DropdownMenuItem(
                             value: value,
                             child: Text(tr(context, value)),
@@ -214,7 +215,12 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                   decoration: InputDecoration(
                     labelText: tr(context, 'Product type'),
                   ),
-                  items: const ['Storable', 'Service', 'General']
+                  items: <String>{
+                    'Storable',
+                    'Service',
+                    'General',
+                    if (_kind.isNotEmpty) _kind,
+                  }
                       .map((value) => DropdownMenuItem(
                             value: value,
                             child: Text(tr(context, value)),
@@ -276,7 +282,10 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                 labelText: tr(context, 'Unit of measure (UOM)'),
                 prefixIcon: const Icon(Icons.straighten_rounded),
               ),
-              items: _predefinedUnits
+              items: <String>{
+                ..._predefinedUnits,
+                if (_selectedUnit.isNotEmpty) _selectedUnit,
+              }
                   .map((unit) => DropdownMenuItem(
                         value: unit,
                         child: Text(

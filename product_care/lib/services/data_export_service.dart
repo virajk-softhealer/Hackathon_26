@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:excel/excel.dart';
@@ -28,8 +29,10 @@ class DataExportService {
       TextCellValue(tr(context, 'Quantity')),
       TextCellValue(tr(context, 'Unit')),
       TextCellValue(tr(context, 'Expiry date')),
-      TextCellValue(tr(context, 'Next service')),
+      TextCellValue(tr(context, 'Service start')),
+      TextCellValue(tr(context, 'Service end')),
       TextCellValue(tr(context, 'Unit cost')),
+      TextCellValue(tr(context, 'Barcode')),
     ]);
     for (final product in store.products) {
       productsSheet.appendRow(_productRow(context, product));
@@ -82,11 +85,78 @@ class DataExportService {
           XFile.fromData(
             Uint8List.fromList(encoded),
             name: filename,
-            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            mimeType:
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           ),
         ],
         title: tr(context, 'Product Care Excel export'),
         text: tr(context, 'Product inventory and stock-loss data'),
+        sharePositionOrigin: origin,
+      ),
+    );
+  }
+
+  Future<ShareResult> exportCsvAndShare(
+    BuildContext context,
+    ProductStore store,
+    Rect origin,
+  ) async {
+    final buffer = StringBuffer();
+    // Clean CSV Header
+    buffer.writeln(
+      'Product,Brand,Category,Type,Quantity,Unit,Expiry Date,Service Start,Service End,Cost,Barcode,Batches',
+    );
+
+    String escape(String s) {
+      if (s.contains(',') || s.contains('"') || s.contains('\n')) {
+        return '"${s.replaceAll('"', '""')}"';
+      }
+      return s;
+    }
+
+    String formatDate(DateTime? d) {
+      if (d == null) return '';
+      return '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    }
+
+    for (final p in store.products) {
+      final exp = formatDate(p.expiry);
+      final sStart = formatDate(p.serviceStartDate ?? p.service);
+      final sEnd = formatDate(p.serviceEndDate);
+      final batchesStr = p.batches
+          .map((b) => '${b.batchNumber}:${b.quantity}')
+          .join(';');
+
+      buffer.writeln([
+        escape(p.name),
+        escape(p.brand),
+        escape(p.category),
+        escape(_typeName(p.kind)),
+        p.quantity,
+        escape(p.unit),
+        exp,
+        sStart,
+        sEnd,
+        p.cost,
+        escape(p.barcode ?? ''),
+        escape(batchesStr),
+      ].join(','));
+    }
+
+    final filename =
+        'ProductCare-${DateTime.now().toIso8601String().substring(0, 10)}.csv';
+    final bytes = Uint8List.fromList(utf8.encode(buffer.toString()));
+    return SharePlus.instance.share(
+      ShareParams(
+        files: [
+          XFile.fromData(
+            bytes,
+            name: filename,
+            mimeType: 'text/csv',
+          ),
+        ],
+        title: tr(context, 'Product Care CSV export'),
+        text: tr(context, 'Product inventory data (CSV)'),
         sharePositionOrigin: origin,
       ),
     );
@@ -100,13 +170,17 @@ class DataExportService {
     IntCellValue(product.quantity),
     TextCellValue(product.unit),
     _dateCell(product.expiry),
-    _dateCell(product.service),
+    _dateCell(product.serviceStartDate ?? product.service),
+    _dateCell(product.serviceEndDate),
     DoubleCellValue(product.cost),
+    TextCellValue(product.barcode ?? ''),
   ];
 
   CellValue _dateCell(DateTime? date) => date == null
       ? TextCellValue('')
-      : DateCellValue(year: date.year, month: date.month, day: date.day);
+      : TextCellValue(
+          '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+        );
 
   String _typeName(ProductKind kind) => switch (kind) {
     ProductKind.storable => 'Storable',

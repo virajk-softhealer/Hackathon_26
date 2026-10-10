@@ -121,6 +121,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         onCreateBackup: _createBackup,
         onRestoreBackup: _restoreBackup,
         onExportExcel: _exportExcel,
+        onExportCsv: _exportCsv,
         languageCode: _store.languageCode,
         onLanguageChanged: _updateLanguage,
       ),
@@ -474,7 +475,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     var addedToExisting = 0;
     var newProductsCreated = 0;
 
-    for (final item in scannedItems) {
+    for (final item in scannedItems.reversed) {
       if (item.matchedProduct != null) {
         final product = item.matchedProduct!;
         if (product.kind == ProductKind.storable) {
@@ -490,6 +491,9 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         } else {
           product.quantity += item.quantity;
         }
+        // Move recently scanned product to the top of list
+        _store.products.remove(product);
+        _store.products.insert(0, product);
         addedToExisting += item.quantity;
       } else {
         OpenFoodFactsResult? facts = item.foodFactsResult;
@@ -731,6 +735,27 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     } catch (_) {
       if (mounted) {
         _showMessage(tr(context, 'Excel export could not be created.'));
+      }
+    }
+  }
+
+  Future<void> _exportCsv() async {
+    try {
+      final size = MediaQuery.sizeOf(context);
+      final result = await _dataExportService.exportCsvAndShare(
+        context,
+        _store,
+        Rect.fromLTWH(0, 0, size.width, size.height),
+      );
+      if (!mounted) return;
+      if (result.status == ShareResultStatus.unavailable) {
+        _showMessage(tr(context, 'Sharing is unavailable on this device.'));
+      } else if (result.status == ShareResultStatus.success) {
+        _showMessage(tr(context, 'CSV file shared.'));
+      }
+    } catch (_) {
+      if (mounted) {
+        _showMessage(tr(context, 'CSV export could not be created.'));
       }
     }
   }

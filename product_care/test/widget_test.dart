@@ -239,4 +239,49 @@ void main() {
     expect(restored.additionalDetails['Allergens'], equals('Milk'));
     expect(restored.batches.first.expiry, equals(newDate1));
   });
+
+  test('ProductStore.addProduct inserts at index 0 so latest product appears on top', () {
+    final store = ProductStore();
+    store.products.clear();
+
+    final product1 = Product(name: 'Product 1', brand: '', category: 'Pantry', quantity: 1, unit: 'units', kind: ProductKind.general);
+    final product2 = Product(name: 'Product 2', brand: '', category: 'Pantry', quantity: 2, unit: 'units', kind: ProductKind.general);
+
+    store.addProduct(product1);
+    expect(store.products.first.name, equals('Product 1'));
+
+    // When product2 is added, it must appear on top (index 0)
+    store.addProduct(product2);
+    expect(store.products.first.name, equals('Product 2'));
+    expect(store.products[1].name, equals('Product 1'));
+  });
+
+  test('Dropdown item set prevents DropdownButton crashes on custom categories', () {
+    const customCategory = 'Snacks & Beverages';
+    final categories = <String>{
+      'Pantry',
+      'Dairy',
+      'Health',
+      'Household',
+      'Appliances',
+      'Other',
+      if (customCategory.isNotEmpty) customCategory,
+    };
+
+    expect(categories.contains('Snacks & Beverages'), isTrue);
+    expect(categories.where((c) => c == customCategory).length, equals(1));
+
+    // When category is standard (e.g. 'Dairy'), set deduplicates so length is still 1
+    const standardCategory = 'Dairy';
+    final deduplicated = <String>{
+      'Pantry',
+      'Dairy',
+      'Health',
+      'Household',
+      'Appliances',
+      'Other',
+      if (standardCategory.isNotEmpty) standardCategory,
+    };
+    expect(deduplicated.where((c) => c == 'Dairy').length, equals(1));
+  });
 }

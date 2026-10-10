@@ -73,7 +73,7 @@ class ProductStore {
 
   int get draftCount => products.where((product) => product.isDraft).length;
 
-  void addProduct(Product product) => products.add(product);
+  void addProduct(Product product) => products.insert(0, product);
 
   bool updateProduct(Product product) {
     final index = products.indexWhere((entry) => entry.id == product.id);
