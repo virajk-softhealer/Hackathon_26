@@ -83,9 +83,12 @@ class ProductDetailsSheet extends StatelessWidget {
           _DetailLine(
             icon: Icons.inventory_2_outlined,
             label: tr(context, 'Available stock'),
-            value: '${product.quantity} ${product.unit}',
+            value: product.quantity <= 0
+                ? tr(context, 'Out of stock')
+                : '${product.quantity} ${tr(context, product.unit)}',
           ),
-        if (product.expiry != null)
+        if (product.expiry != null &&
+            (product.kind == ProductKind.service || product.quantity > 0))
           _DetailLine(
             icon: Icons.event_outlined,
             label: tr(context, 'Best before'),

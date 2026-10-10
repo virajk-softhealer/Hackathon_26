@@ -20,45 +20,53 @@ class ProductCard extends StatelessWidget {
     final isService = daysToService != null;
     final hasWarranty = daysToWarranty != null;
 
-    final isExpiredOrOverdue = (daysToService != null && daysToService < 0) ||
+    final isOutOfStock = product.kind != ProductKind.service && product.quantity <= 0;
+
+    final isExpiredOrOverdue = !isOutOfStock &&
+        ((daysToService != null && daysToService < 0) ||
         (daysToWarranty != null && daysToWarranty < 0) ||
-        (daysToExpiry != null && daysToExpiry < 0);
+        (daysToExpiry != null && daysToExpiry < 0));
 
-    final isDueSoon = (daysToService != null && daysToService <= 7) ||
+    final isDueSoon = !isOutOfStock &&
+        ((daysToService != null && daysToService <= 7) ||
         (daysToWarranty != null && daysToWarranty <= 7) ||
-        (daysToExpiry != null && daysToExpiry <= 7);
+        (daysToExpiry != null && daysToExpiry <= 7));
 
-    final statusColor = isExpiredOrOverdue
-        ? const Color(0xFFBA1A1A)
-        : isDueSoon
-            ? const Color(0xFFB56818)
-            : isService
-                ? const Color(0xFF5866A8)
-                : brandGreen;
+    final statusColor = isOutOfStock
+        ? const Color(0xFFB56818)
+        : isExpiredOrOverdue
+            ? const Color(0xFFBA1A1A)
+            : isDueSoon
+                ? const Color(0xFFB56818)
+                : isService
+                    ? const Color(0xFF5866A8)
+                    : brandGreen;
 
-    final status = isService
-        ? (daysToService < 0
-            ? tr(context, 'Service expired')
-            : daysToService == 0
-                ? tr(context, 'Service due today')
-                : tr(context, 'Service in {days} days', {'days': daysToService}))
-        : hasWarranty
-            ? (daysToWarranty < 0
-                ? tr(context, 'Warranty expired')
-                : daysToWarranty == 0
-                    ? tr(context, 'Warranty expires today')
-                    : tr(context, 'Warranty expires in {days} days', {
-                        'days': daysToWarranty,
-                      }))
-            : daysToExpiry == null
-                ? tr(context, 'No expiry date')
-                : daysToExpiry < 0
-                    ? tr(context, 'Expired')
-                    : daysToExpiry == 0
-                        ? tr(context, 'Expires today')
-                        : tr(context, 'Expires in {days} days', {
-                            'days': daysToExpiry,
-                          });
+    final status = isOutOfStock
+        ? tr(context, 'Out of stock')
+        : isService
+            ? (daysToService < 0
+                ? tr(context, 'Service expired')
+                : daysToService == 0
+                    ? tr(context, 'Service due today')
+                    : tr(context, 'Service in {days} days', {'days': daysToService}))
+            : hasWarranty
+                ? (daysToWarranty < 0
+                    ? tr(context, 'Warranty expired')
+                    : daysToWarranty == 0
+                        ? tr(context, 'Warranty expires today')
+                        : tr(context, 'Warranty expires in {days} days', {
+                            'days': daysToWarranty,
+                          }))
+                : daysToExpiry == null
+                    ? tr(context, 'No expiry date')
+                    : daysToExpiry < 0
+                        ? tr(context, 'Expired')
+                        : daysToExpiry == 0
+                            ? tr(context, 'Expires today')
+                            : tr(context, 'Expires in {days} days', {
+                                'days': daysToExpiry,
+                              });
 
     return Card(
       child: InkWell(
@@ -100,9 +108,11 @@ class ProductCard extends StatelessWidget {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Icon(
-                          isService || hasWarranty
-                              ? Icons.verified_user_outlined
-                              : Icons.schedule,
+                          isOutOfStock
+                              ? Icons.inventory_2_outlined
+                              : isService || hasWarranty
+                                  ? Icons.verified_user_outlined
+                                  : Icons.schedule,
                           size: 14,
                           color: statusColor,
                         ),
@@ -114,9 +124,9 @@ class ProductCard extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        if (!isService)
+                        if (!isService && !isOutOfStock)
                           Text(
-                            '· ${product.quantity} ${product.unit}',
+                            '· ${product.quantity} ${tr(context, product.unit)}',
                             style: TextStyle(
                               color: Theme.of(context)
                                   .colorScheme

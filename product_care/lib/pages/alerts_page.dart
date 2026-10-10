@@ -165,15 +165,27 @@ class _ReminderAlert extends StatelessWidget {
     final kind = reminder.kind;
     final isService = kind == 'Service';
     final isWarranty = kind == 'Warranty';
-    final color = isService
-        ? const Color(0xFF5469AA)
-        : isWarranty
-            ? const Color(0xFF278765)
-            : const Color(0xFFB56818);
-    final title = tr(context, '{type} reminder: {name}', {
-      'type': tr(context, kind),
-      'name': product.name,
-    });
+    final isPast = reminder.days < 0;
+
+    final color = isPast
+        ? const Color(0xFFBA1A1A)
+        : isService
+            ? const Color(0xFF5469AA)
+            : isWarranty
+                ? const Color(0xFF278765)
+                : const Color(0xFFB56818);
+
+    final title = isPast
+        ? (isService
+            ? tr(context, 'Service Expired: {name}', {'name': product.name})
+            : isWarranty
+                ? tr(context, 'Warranty Expired: {name}', {'name': product.name})
+                : tr(context, 'Product Expired: {name}', {'name': product.name}))
+        : tr(context, '{type} reminder: {name}', {
+            'type': tr(context, kind),
+            'name': product.name,
+          });
+
     final body = _message(context);
     return Card(
       child: ListTile(
@@ -182,11 +194,13 @@ class _ReminderAlert extends StatelessWidget {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: isService
-                ? const Color(0xFFE7ECFA)
-                : isWarranty
-                    ? const Color(0xFFE5F0E9)
-                    : const Color(0xFFFFEED8),
+            color: isPast
+                ? const Color(0xFFFFDAD6)
+                : isService
+                    ? const Color(0xFFE7ECFA)
+                    : isWarranty
+                        ? const Color(0xFFE5F0E9)
+                        : const Color(0xFFFFEED8),
             borderRadius: BorderRadius.circular(13),
           ),
           child: Icon(
@@ -202,7 +216,11 @@ class _ReminderAlert extends StatelessWidget {
           title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+            color: isPast ? const Color(0xFFBA1A1A) : null,
+          ),
         ),
         subtitle: Text(body),
         isThreeLine: true,
@@ -213,7 +231,14 @@ class _ReminderAlert extends StatelessWidget {
   String _message(BuildContext context) {
     final name = reminder.product.name;
     if (reminder.kind == 'Service') {
-      return reminder.days <= 0
+      if (reminder.days < 0) {
+        return tr(
+          context,
+          '{name} service has expired and is overdue.',
+          {'name': name},
+        );
+      }
+      return reminder.days == 0
           ? tr(context, '{name} is due for service today.', {'name': name})
           : tr(context, '{name} needs service in {days} days.', {
               'name': name,
@@ -231,7 +256,7 @@ class _ReminderAlert extends StatelessWidget {
                 });
     }
     return reminder.days < 0
-        ? tr(context, '{name} is past its expiry date. Review the product details.', {'name': name})
+        ? tr(context, '{name} has expired. Review the product details.', {'name': name})
         : reminder.days == 0
             ? tr(context, '{name} expires today. Review the product details.', {'name': name})
             : tr(context, '{name} expires in {days} days. Review the product details.', {

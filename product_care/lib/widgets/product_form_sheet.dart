@@ -31,7 +31,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     'bags',
     'dozen',
     'sets',
-    'custom',
+    'other',
   ];
 
   late final TextEditingController _name;
@@ -74,12 +74,14 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     };
 
     final initialUnit = product?.unit ?? 'units';
-    if (_predefinedUnits.contains(initialUnit) && initialUnit != 'custom') {
+    if (_predefinedUnits.contains(initialUnit) && initialUnit != 'other') {
       _selectedUnit = initialUnit;
       _customUnit = TextEditingController();
     } else {
-      _selectedUnit = 'custom';
-      _customUnit = TextEditingController(text: initialUnit);
+      _selectedUnit = 'other';
+      _customUnit = TextEditingController(
+        text: initialUnit == 'other' ? '' : initialUnit,
+      );
     }
 
     _expiry = product?.expiry;
@@ -265,8 +267,8 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                   .map((unit) => DropdownMenuItem(
                         value: unit,
                         child: Text(
-                          unit == 'custom'
-                              ? tr(context, 'Custom unit...')
+                          unit == 'other'
+                              ? tr(context, 'Other')
                               : tr(context, unit),
                         ),
                       ))
@@ -275,13 +277,13 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                 _selectedUnit = value ?? 'units';
               }),
             ),
-            if (_selectedUnit == 'custom') ...[
+            if (_selectedUnit == 'other') ...[
               const SizedBox(height: 10),
               TextField(
                 controller: _customUnit,
                 textCapitalization: TextCapitalization.words,
                 decoration: InputDecoration(
-                  labelText: tr(context, 'Enter custom UOM'),
+                  labelText: tr(context, 'Enter other UOM'),
                   hintText: 'e.g. cans, rolls, strips',
                   prefixIcon: const Icon(Icons.edit_note_rounded),
                 ),
@@ -456,7 +458,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     String finalUnit;
     if (kind == ProductKind.service) {
       finalUnit = 'unit';
-    } else if (_selectedUnit == 'custom') {
+    } else if (_selectedUnit == 'other') {
       final custom = _customUnit.text.trim();
       finalUnit = custom.isNotEmpty ? custom : 'units';
     } else {

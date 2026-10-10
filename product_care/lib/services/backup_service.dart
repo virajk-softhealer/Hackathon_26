@@ -38,12 +38,15 @@ class BackupService {
   }
 
   Future<ProductCareSnapshot> readBackup(File file) async {
-    final allowedDirectory = await _backupDirectory();
-    if (file.parent.path != allowedDirectory.path ||
-        !file.path.endsWith('.json')) {
-      throw const FormatException('That file is not a Product Care backup.');
-    }
     final decoded = jsonDecode(await file.readAsString());
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException('The backup file is not valid JSON data.');
+    }
+    return ProductCareSnapshot.fromJson(decoded);
+  }
+
+  ProductCareSnapshot parseBackupString(String content) {
+    final decoded = jsonDecode(content);
     if (decoded is! Map<String, dynamic>) {
       throw const FormatException('The backup file is not valid JSON data.');
     }

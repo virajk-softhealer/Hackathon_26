@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../app/app_localizations.dart';
@@ -122,29 +125,65 @@ class _ProductCareHomeState extends State<ProductCareHome> {
       ),
     ];
 
-    return Scaffold(
-      body: SafeArea(
-        child: PageView(
-          controller: _pageController,
-          scrollDirection: Axis.horizontal,
-          onPageChanged: (index) => setState(() => _selectedTab = index),
-          children: pages,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (_selectedTab != 0) {
+          _selectTab(0);
+          return;
+        }
+        final shouldExit = await _confirmExit();
+        if (shouldExit && mounted) {
+          await SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: PageView(
+            controller: _pageController,
+            scrollDirection: Axis.horizontal,
+            onPageChanged: (index) => setState(() => _selectedTab = index),
+            children: pages,
+          ),
+        ),
+        floatingActionButton: _selectedTab == 1
+            ? FloatingActionButton.extended(
+                onPressed: _addProduct,
+                backgroundColor: brandGreen,
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.add),
+                label: Text(tr(context, 'Add product')),
+              )
+            : null,
+        bottomNavigationBar: ProductCareNavigationBar(
+          selectedIndex: _selectedTab,
+          onSelected: _selectTab,
+          onScan: _showScanInfo,
         ),
       ),
-      floatingActionButton: _selectedTab == 1
-          ? FloatingActionButton.extended(
-              onPressed: _addProduct,
-              backgroundColor: brandGreen,
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add),
-              label: Text(tr(context, 'Add product')),
-            )
-          : null,
-      bottomNavigationBar: ProductCareNavigationBar(
-        selectedIndex: _selectedTab,
-        onSelected: _selectTab,
+    );
+  }
+
+  Future<bool> _confirmExit() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(tr(context, 'Exit Product Care?')),
+        content: Text(tr(context, 'Are you sure you want to exit the app?')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(tr(context, 'Cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(tr(context, 'Exit')),
+          ),
+        ],
       ),
     );
+    return confirmed ?? false;
   }
 
   void _selectTab(int index) {
@@ -175,6 +214,10 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     if (!mounted) return;
     if (_hasReminderDate(product)) {
       await _rescheduleNotifications(requestPermission: true);
+      await _notificationService.checkAndTriggerImmediateAlert(
+        product: product,
+        store: _store,
+      );
     }
     if (!mounted) return;
     _showMessage(
@@ -226,6 +269,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
       builder: (_) => ProductDetailsSheet(
         product: product,
         onRecordLoss: () => _recordLoss(product),
+        onAddStock: () => _addStock(product),
         onEdit: () => _editProduct(product),
         onRenewWarranty: () => _editProduct(product, renewWarranty: true),
         onRemove: () {
@@ -235,6 +279,29 @@ class _ProductCareHomeState extends State<ProductCareHome> {
           _showMessage(tr(context, '{name} removed.', {'name': product.name}));
         },
         onRestock: () => _showRestockSearch(product),
+      ),
+    );
+  }
+
+  Future<void> _addStock(Product product) async {
+    final quantity = await showAddStockDialog(context, product);
+    if (quantity == null || !mounted) return;
+    product.quantity += quantity;
+    setState(() {});
+    await _persistStore();
+    if (!mounted) return;
+    await _rescheduleNotifications();
+    if (!mounted) return;
+    _showMessage(
+      tr(
+        context,
+        '{quantity} {unit} added to {name}. Total stock: {total}.',
+        {
+          'quantity': quantity,
+          'unit': product.unit,
+          'name': product.name,
+          'total': product.quantity,
+        },
       ),
     );
   }
@@ -462,11 +529,31 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     try {
       await _store.persist();
       final file = await _backupService.createBackup(_store);
-      if (mounted) {
-        _showMessage(
-          tr(context, 'Backup saved: {name}', {'name': _fileName(file)}),
-        );
-      }
+      if (!mounted) return;
+      final fileName = _fileName(file);
+      _showMessage(
+        tr(context, 'Backup saved: {name}', {'name': fileName}),
+      );
+      final size = MediaQuery.sizeOf(context);
+      final titleText = tr(
+        context,
+        'Product Care backup: {name}',
+        {'name': fileName},
+      );
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [
+            XFile(
+              file.path,
+              name: fileName,
+              mimeType: 'application/json',
+            ),
+          ],
+          title: titleText,
+          text: titleText,
+          sharePositionOrigin: Rect.fromLTWH(0, 0, size.width, size.height),
+        ),
+      );
     } catch (_) {
       if (mounted) _showMessage(tr(context, 'Backup could not be created.'));
     }
@@ -476,13 +563,8 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     try {
       final backups = await _backupService.listBackups();
       if (!mounted) return;
-      if (backups.isEmpty) {
-        _showMessage(
-          tr(context, 'No Product Care backups are saved on this device yet.'),
-        );
-        return;
-      }
-      final selected = await showModalBottomSheet<File>(
+
+      final selectedSource = await showModalBottomSheet<_BackupSource?>(
         context: context,
         useSafeArea: true,
         builder: (sheetContext) => SafeArea(
@@ -491,28 +573,76 @@ class _ProductCareHomeState extends State<ProductCareHome> {
             padding: const EdgeInsets.all(16),
             children: [
               Padding(
-                padding: EdgeInsets.fromLTRB(8, 8, 8, 12),
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
                 child: Text(
-                  tr(context, 'Choose a backup to restore'),
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-              ),
-              ...backups.map(
-                (file) => ListTile(
-                  leading: const Icon(Icons.backup_outlined),
-                  title: Text(_fileName(file)),
-                  subtitle: Text(
-                    tr(context, 'Products, loss history, and reminder days'),
+                  tr(context, 'Choose or import a backup'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                   ),
-                  onTap: () => Navigator.pop(sheetContext, file),
                 ),
               ),
+              ListTile(
+                leading: const Icon(
+                  Icons.file_open_outlined,
+                  color: brandGreen,
+                ),
+                title: Text(tr(context, 'Import from device')),
+                subtitle: Text(tr(context, 'Import backup file')),
+                onTap: () => Navigator.pop(
+                  sheetContext,
+                  const _DeviceFileBackupSource(),
+                ),
+              ),
+              if (backups.isNotEmpty) ...[
+                const Divider(),
+                ...backups.map(
+                  (file) => ListTile(
+                    leading: const Icon(Icons.backup_outlined),
+                    title: Text(_fileName(file)),
+                    subtitle: Text(
+                      tr(context, 'Products, loss history, and reminder days'),
+                    ),
+                    onTap: () => Navigator.pop(
+                      sheetContext,
+                      _LocalFileBackupSource(file),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
       );
-      if (selected == null || !mounted) return;
-      final snapshot = await _backupService.readBackup(selected);
+      if (selectedSource == null || !mounted) return;
+
+      ProductCareSnapshot snapshot;
+      String backupName;
+
+      if (selectedSource is _DeviceFileBackupSource) {
+        final pickedFiles = await FilePicker.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['json'],
+        );
+        if (pickedFiles.isEmpty || !mounted) return;
+        final picked = pickedFiles.first;
+        backupName = picked.name;
+        final bytes = await picked.readAsBytes();
+        if (bytes.isNotEmpty) {
+          final content = utf8.decode(bytes);
+          snapshot = _backupService.parseBackupString(content);
+        } else if (picked.path != null) {
+          snapshot = await _backupService.readBackup(File(picked.path!));
+        } else {
+          return;
+        }
+      } else if (selectedSource is _LocalFileBackupSource) {
+        backupName = _fileName(selectedSource.file);
+        snapshot = await _backupService.readBackup(selectedSource.file);
+      } else {
+        return;
+      }
+
       if (!mounted) return;
       final confirmed = await showDialog<bool>(
         context: context,
@@ -521,7 +651,8 @@ class _ProductCareHomeState extends State<ProductCareHome> {
           content: Text(
             tr(
               context,
-              'This replaces the products, stock-loss history, and reminder days currently saved in Product Care.',
+              'This replaces the products, stock-loss history, and reminder days currently saved in Product Care with data from {name}.',
+              {'name': backupName},
             ),
           ),
           actions: [
@@ -543,7 +674,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
       widget.onLanguageChanged(snapshot.languageCode);
       _showMessage(
         tr(context, 'Backup restored from {name}.', {
-          'name': _fileName(selected),
+          'name': backupName,
         }),
       );
     } on FormatException catch (error) {
@@ -640,3 +771,17 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     );
   }
 }
+
+sealed class _BackupSource {
+  const _BackupSource();
+}
+
+class _DeviceFileBackupSource extends _BackupSource {
+  const _DeviceFileBackupSource();
+}
+
+class _LocalFileBackupSource extends _BackupSource {
+  const _LocalFileBackupSource(this.file);
+  final File file;
+}
+
