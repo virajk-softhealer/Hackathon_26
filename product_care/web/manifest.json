@@ -1,11 +1,11 @@
 {
-    "name": "product_care",
-    "short_name": "product_care",
+    "name": "Product Care",
+    "short_name": "Product Care",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F5F7F3",
+    "theme_color": "#246B52",
+    "description": "Manage household products, stock, expiry dates, and service schedules.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

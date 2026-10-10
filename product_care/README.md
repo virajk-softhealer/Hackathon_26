@@ -1,5 +1,21 @@
 # Project: AI-Powered Product, Expiry, Service & Stock Loss Management App
 
+## Current app implementation
+
+The Flutter client is in this folder. Run it with `flutter pub get` and `flutter run` from `product_care/`. See
+[`ARCHITECTURE.md`](ARCHITECTURE.md) for the source tree and a feature-by-feature implementation overview.
+
+The current app includes the Product Care branded dashboard and five main destinations (Home, Products, Calendar,
+Alerts, and Settings), a short animated splash, sample household products, product entry and filtering, expiry/service
+overview, stock-loss quantity confirmation, and light/dark/system appearance selection. The supplied
+`app_icon_1.png` is used for the app branding and launcher icons. Android, iOS, and web display the name **Product Care**.
+
+This is the first UI and interaction pass over the Flutter starter project. Product data and preferences currently live
+in memory for the session. Local database persistence, camera/OCR scanning, operating-system notifications, language
+packs, backup/restore, and external restock search links still need implementation before the production-oriented
+requirements below are complete. Buttons for unavailable integrations explain their current status rather than
+pretending those services are active.
+
 ## 1. Project Overview
 
 Develop a complete, production-oriented Flutter mobile application that helps users manage products, track expiry dates, schedule service reminders, monitor stock, and record expired or damaged inventory as losses.
