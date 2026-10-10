@@ -13,31 +13,52 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isService = product.service != null;
-    final hasWarranty = product.warranty != null;
-    final days = product.daysToExpiry;
-    final daysToWarranty = product.warranty?.difference(DateTime.now()).inDays;
-    final statusColor = isService
-        ? const Color(0xFF5866A8)
-        : (days != null && days <= 7) ||
-              (daysToWarranty != null && daysToWarranty <= 7)
-        ? const Color(0xFFB56818)
-        : brandGreen;
+    final daysToService = product.daysToService;
+    final daysToWarranty = product.daysToWarranty;
+    final daysToExpiry = product.daysToExpiry;
+
+    final isService = daysToService != null;
+    final hasWarranty = daysToWarranty != null;
+
+    final isExpiredOrOverdue = (daysToService != null && daysToService < 0) ||
+        (daysToWarranty != null && daysToWarranty < 0) ||
+        (daysToExpiry != null && daysToExpiry < 0);
+
+    final isDueSoon = (daysToService != null && daysToService <= 7) ||
+        (daysToWarranty != null && daysToWarranty <= 7) ||
+        (daysToExpiry != null && daysToExpiry <= 7);
+
+    final statusColor = isExpiredOrOverdue
+        ? const Color(0xFFBA1A1A)
+        : isDueSoon
+            ? const Color(0xFFB56818)
+            : isService
+                ? const Color(0xFF5866A8)
+                : brandGreen;
+
     final status = isService
-        ? tr(context, 'Service in {days} days', {
-            'days': product.service!.difference(DateTime.now()).inDays,
-        })
+        ? (daysToService < 0
+            ? tr(context, 'Service expired')
+            : daysToService == 0
+                ? tr(context, 'Service due today')
+                : tr(context, 'Service in {days} days', {'days': daysToService}))
         : hasWarranty
-        ? tr(context, 'Warranty expires in {days} days', {
-            'days': daysToWarranty,
-          })
-        : days == null
-        ? tr(context, 'No expiry date')
-        : days < 0
-        ? tr(context, 'Expired')
-        : days == 0
-        ? tr(context, 'Expires today')
-        : tr(context, 'Expires in {days} days', {'days': days});
+            ? (daysToWarranty < 0
+                ? tr(context, 'Warranty expired')
+                : daysToWarranty == 0
+                    ? tr(context, 'Warranty expires today')
+                    : tr(context, 'Warranty expires in {days} days', {
+                        'days': daysToWarranty,
+                      }))
+            : daysToExpiry == null
+                ? tr(context, 'No expiry date')
+                : daysToExpiry < 0
+                    ? tr(context, 'Expired')
+                    : daysToExpiry == 0
+                        ? tr(context, 'Expires today')
+                        : tr(context, 'Expires in {days} days', {
+                            'days': daysToExpiry,
+                          });
 
     return Card(
       child: InkWell(

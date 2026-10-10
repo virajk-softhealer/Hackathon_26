@@ -37,6 +37,22 @@ class Product {
     return expiryDay.difference(today).inDays;
   }
 
+  int? get daysToService {
+    if (service == null) return null;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final serviceDay = DateTime(service!.year, service!.month, service!.day);
+    return serviceDay.difference(today).inDays;
+  }
+
+  int? get daysToWarranty {
+    if (warranty == null) return null;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final warrantyDay = DateTime(warranty!.year, warranty!.month, warranty!.day);
+    return warrantyDay.difference(today).inDays;
+  }
+
   static String _newId() =>
       'product_${DateTime.now().microsecondsSinceEpoch}_${_nextGeneratedId++}';
 

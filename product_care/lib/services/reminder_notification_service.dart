@@ -44,7 +44,7 @@ class ReminderNotificationService {
           requestBadgePermission: false,
           requestSoundPermission: false,
         ),
-        web: WebInitializationSettings(defaultIcon: 'icons/Icon-192.png'),
+        web: WebInitializationSettings(),
       ),
       onDidReceiveNotificationResponse: (response) {
         _onNotificationTap?.call(response.payload);
@@ -68,7 +68,7 @@ class ReminderNotificationService {
       >();
       if (web == null) return false;
       if (web.permissionStatus == WebNotificationPermission.granted) return true;
-      return web.requestNotificationsPermission();
+      return await web.requestNotificationsPermission() ?? false;
     }
     if (defaultTargetPlatform == TargetPlatform.android) {
       final android = _plugin.resolvePlatformSpecificImplementation<
@@ -144,23 +144,23 @@ class ReminderNotificationService {
       for (final event in _eventsFor(product)) {
         final eventDate = _dateAtMidnight(event.date);
         for (final leadDays in <int>{...store.reminderDays, 0}) {
-          final key = _eventKey(product, event, leadDays);
+          final isExpired = leadDays == 0 && eventDate.isBefore(_dateAtMidnight(DateTime.now()));
+          final key = _eventKey(product, event, leadDays, isExpired: isExpired);
           final id = _stableId(key);
           final trigger = _scheduledTime(eventDate, leadDays);
 
           if (trigger == null || !trigger.isAfter(now)) {
             final daysUntil = eventDate.difference(_dateAtMidnight(DateTime.now())).inDays;
-            final isDueTodayOrPast = leadDays == 0 && daysUntil <= 0;
+            final isDueOrExpired = leadDays == 0 && daysUntil <= 0;
             final isMissedLeadDay =
                 leadDays > 0 && daysUntil > 0 && daysUntil <= leadDays;
-            if ((isDueTodayOrPast || isMissedLeadDay) &&
+            if ((isDueOrExpired || isMissedLeadDay) &&
                 !store.notificationKeys.contains(key)) {
               await _showEventNow(
                 id: id,
                 product: product,
                 event: event,
                 daysUntil: daysUntil,
-                isDue: isDueTodayOrPast,
                 language: language,
               );
               store.notificationKeys.add(key);
@@ -173,15 +173,13 @@ class ReminderNotificationService {
           if (pendingIds.contains(id)) continue;
           await _plugin.zonedSchedule(
             id: id,
-            title: _title(product, event, leadDays == 0, language),
+            title: _title(product, event, leadDays, language),
             body: _body(product, event, leadDays, language),
             scheduledDate: trigger,
             notificationDetails: _notificationDetails(language),
             androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
             payload: product.id,
           );
-          store.notificationKeys.add(key);
-          storeChanged = true;
         }
       }
     }
@@ -195,12 +193,45 @@ class ReminderNotificationService {
     return true;
   }
 
-  Future<void> sendTestNotification(ProductStore store) async {
+  Future<void> checkAndTriggerImmediateAlert({
+    required Product product,
+    required ProductStore store,
+  }) async {
+    if (!_initialized) return;
     if (!await hasPermission()) return;
+    final language = ProductCareLocalizations(Locale(store.languageCode));
+    final now = _dateAtMidnight(DateTime.now());
+    final reminderThreshold = store.reminderDays.isEmpty ? 3 : store.reminderDays.first;
+
+    for (final event in _eventsFor(product)) {
+      final eventDate = _dateAtMidnight(event.date);
+      final daysUntil = eventDate.difference(now).inDays;
+
+      if (daysUntil <= reminderThreshold) {
+        final isExpired = daysUntil < 0;
+        final key = _eventKey(product, event, 0, isExpired: isExpired);
+        if (!store.notificationKeys.contains(key)) {
+          final id = _stableId(key);
+          await _plugin.show(
+            id: id,
+            title: _title(product, event, daysUntil, language),
+            body: _body(product, event, daysUntil, language),
+            notificationDetails: _notificationDetails(language),
+            payload: product.id,
+          );
+          store.notificationKeys.add(key);
+          await store.persist();
+        }
+      }
+    }
+  }
+
+  Future<bool> sendTestNotification(ProductStore store) async {
+    if (!await hasPermission()) return false;
     final candidates = store.products
         .expand((product) => _eventsFor(product).map((event) => (product, event)))
         .toList();
-    if (candidates.isEmpty) return;
+    if (candidates.isEmpty) return false;
     final (product, _) = candidates.first;
     final language = ProductCareLocalizations(Locale(store.languageCode));
     await _plugin.show(
@@ -210,23 +241,22 @@ class ReminderNotificationService {
       notificationDetails: _notificationDetails(language),
       payload: product.id,
     );
+    return true;
   }
 
   List<_ReminderEvent> _eventsFor(Product product) {
-    if (product.kind == ProductKind.storable &&
-        product.quantity > 0 &&
-        product.expiry != null) {
-      return [_ReminderEvent(ReminderType.expiry, product.expiry!)];
+    final events = <_ReminderEvent>[];
+    if (product.expiry != null &&
+        (product.kind != ProductKind.storable || product.quantity > 0)) {
+      events.add(_ReminderEvent(ReminderType.expiry, product.expiry!));
     }
-    if (product.kind == ProductKind.service) {
-      return [
-        if (product.service != null)
-          _ReminderEvent(ReminderType.service, product.service!),
-        if (product.warranty != null)
-          _ReminderEvent(ReminderType.warranty, product.warranty!),
-      ];
+    if (product.service != null) {
+      events.add(_ReminderEvent(ReminderType.service, product.service!));
     }
-    return const [];
+    if (product.warranty != null) {
+      events.add(_ReminderEvent(ReminderType.warranty, product.warranty!));
+    }
+    return events;
   }
 
   timezone.TZDateTime? _scheduledTime(DateTime dueDate, int leadDays) {
@@ -253,8 +283,13 @@ class ReminderNotificationService {
   DateTime _dateAtMidnight(DateTime date) =>
       DateTime(date.year, date.month, date.day);
 
-  String _eventKey(Product product, _ReminderEvent event, int leadDays) =>
-      '${product.id}|${event.type.name}|${event.date.toIso8601String().substring(0, 10)}|$leadDays';
+  String _eventKey(
+    Product product,
+    _ReminderEvent event,
+    int leadDays, {
+    bool isExpired = false,
+  }) =>
+      '${product.id}|${event.type.name}|${event.date.toIso8601String().substring(0, 10)}|${isExpired ? "EXPIRED" : leadDays}';
 
   int _stableId(String value) {
     var hash = 0x811C9DC5;
@@ -269,13 +304,12 @@ class ReminderNotificationService {
     required Product product,
     required _ReminderEvent event,
     required int daysUntil,
-    required bool isDue,
     required ProductCareLocalizations language,
   }) async {
     await _plugin.show(
       id: id,
-      title: _title(product, event, isDue, language),
-      body: _body(product, event, isDue ? 0 : daysUntil, language),
+      title: _title(product, event, daysUntil, language),
+      body: _body(product, event, daysUntil, language),
       notificationDetails: _notificationDetails(language),
       payload: product.id,
     );
@@ -284,7 +318,7 @@ class ReminderNotificationService {
   String _title(
     Product product,
     _ReminderEvent event,
-    bool isDue,
+    int days,
     ProductCareLocalizations language,
   ) {
     final source = switch (event.type) {
@@ -292,10 +326,18 @@ class ReminderNotificationService {
       ReminderType.service => 'Service Reminder: {name}',
       ReminderType.warranty => 'Warranty Reminder: {name}',
     };
-    final title = language.translate(source, {'name': product.name});
-    return isDue
-        ? language.translate('Due today: {title}', {'title': title})
-        : title;
+    final baseTitle = language.translate(source, {'name': product.name});
+    if (days < 0) {
+      return event.type == ReminderType.service
+          ? language.translate('Service Expired: {name}', {'name': product.name})
+          : event.type == ReminderType.warranty
+              ? language.translate('Warranty Expired: {name}', {'name': product.name})
+              : language.translate('Product Expired: {name}', {'name': product.name});
+    }
+    if (days == 0) {
+      return language.translate('Due today: {title}', {'title': baseTitle});
+    }
+    return baseTitle;
   }
 
   String _body(
@@ -304,7 +346,15 @@ class ReminderNotificationService {
     int days,
     ProductCareLocalizations language,
   ) {
-    if (days <= 0) {
+    if (days < 0) {
+      final source = switch (event.type) {
+        ReminderType.expiry => 'This product has expired. Review your stock.',
+        ReminderType.service => 'This product service has expired and is overdue.',
+        ReminderType.warranty => 'This product warranty has expired.',
+      };
+      return language.translate(source, {'name': product.name});
+    }
+    if (days == 0) {
       final source = switch (event.type) {
         ReminderType.expiry => 'This product expires today. Review your stock.',
         ReminderType.service => 'This product is due for service today.',

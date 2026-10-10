@@ -29,9 +29,14 @@ class CalendarPage extends StatelessWidget {
                   product.warranty != null,
             )
             .toList()
-          ..sort(
-            (a, b) => _nextDate(a).compareTo(_nextDate(b)),
-          );
+          ..sort((a, b) {
+            final dateA = _nextDate(a);
+            final dateB = _nextDate(b);
+            if (dateA == null && dateB == null) return 0;
+            if (dateA == null) return 1;
+            if (dateB == null) return -1;
+            return dateA.compareTo(dateB);
+          });
     final now = DateTime.now();
     return CustomScrollView(
       slivers: [
@@ -138,11 +143,11 @@ class CalendarPage extends StatelessWidget {
     );
   }
 
-  DateTime _nextDate(Product product) {
+  DateTime? _nextDate(Product product) {
     final dates = [product.expiry, product.service, product.warranty]
         .whereType<DateTime>()
         .toList()
       ..sort();
-    return dates.first;
+    return dates.isEmpty ? null : dates.first;
   }
 }

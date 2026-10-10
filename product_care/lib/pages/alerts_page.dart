@@ -109,17 +109,22 @@ class AlertsPage extends StatelessWidget {
 
   List<_ReminderEntry> _remindersFor(Product product) {
     final entries = <_ReminderEntry>[];
+    final maxThreshold = reminderDays.isEmpty
+        ? 3
+        : reminderDays.reduce((a, b) => a > b ? a : b);
+
     void add(String kind, DateTime? date) {
       if (date == null) return;
       final days = _daysFromToday(date);
-      if (days <= 0 || reminderDays.contains(days)) {
+      if (days <= maxThreshold) {
         entries.add(_ReminderEntry(product, kind, date, days));
       }
     }
 
     add('Service', product.service);
     add('Warranty', product.warranty);
-    if (product.kind == ProductKind.storable && product.quantity > 0) {
+    if (product.expiry != null &&
+        (product.kind != ProductKind.storable || product.quantity > 0)) {
       add('Expiry', product.expiry);
     }
     return entries;

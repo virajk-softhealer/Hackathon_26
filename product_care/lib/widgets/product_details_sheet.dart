@@ -9,6 +9,7 @@ class ProductDetailsSheet extends StatelessWidget {
   const ProductDetailsSheet({
     required this.product,
     required this.onRecordLoss,
+    required this.onAddStock,
     required this.onRemove,
     required this.onRestock,
     required this.onEdit,
@@ -18,6 +19,7 @@ class ProductDetailsSheet extends StatelessWidget {
 
   final Product product;
   final VoidCallback onRecordLoss;
+  final VoidCallback onAddStock;
   final VoidCallback onRemove;
   final VoidCallback onRestock;
   final VoidCallback onEdit;
@@ -30,17 +32,26 @@ class ProductDetailsSheet extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Center(
-          child: Container(
-            width: 38,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Theme.of(context).dividerColor,
-              borderRadius: BorderRadius.circular(4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const SizedBox(width: 32),
+            Container(
+              width: 38,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(context).dividerColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
-          ),
+            IconButton(
+              icon: const Icon(Icons.close_rounded, size: 20),
+              onPressed: () => Navigator.pop(context),
+              tooltip: tr(context, 'Cancel'),
+            ),
+          ],
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 6),
         Row(
           children: [
             ProductIcon(product),
@@ -92,19 +103,36 @@ class ProductDetailsSheet extends StatelessWidget {
             label: tr(context, 'Warranty expires'),
             value: localizedFullDate(context, product.warranty!),
           ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () {
-              Navigator.pop(context);
-              onEdit();
-            },
-            icon: const Icon(Icons.edit_outlined),
-            label: Text(tr(context, 'Edit details')),
-          ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  onEdit();
+                },
+                icon: const Icon(Icons.edit_outlined),
+                label: Text(tr(context, 'Edit details')),
+              ),
+            ),
+            if (product.kind != ProductKind.service) ...[
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton.tonalIcon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onAddStock();
+                  },
+                  icon: const Icon(Icons.add_shopping_cart_rounded),
+                  label: Text(tr(context, 'Add stock')),
+                ),
+              ),
+            ],
+          ],
         ),
-        if (product.kind == ProductKind.service)
+        if (product.kind == ProductKind.service) ...[
+          const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
@@ -116,39 +144,38 @@ class ProductDetailsSheet extends StatelessWidget {
               label: Text(tr(context, 'Renew warranty')),
             ),
           ),
-        const SizedBox(height: 8),
-        if (product.kind != ProductKind.service &&
-            (product.quantity == 0 ||
-                (product.daysToExpiry != null &&
-                    product.daysToExpiry! < 0))) ...[
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                onRestock();
-              },
-              icon: const Icon(Icons.shopping_bag_outlined),
-              label: Text(tr(context, 'Restock product')),
-            ),
+        ],
+        if (product.kind != ProductKind.service) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onRestock();
+                  },
+                  icon: const Icon(Icons.shopping_bag_outlined),
+                  label: Text(tr(context, 'Restock')),
+                ),
+              ),
+              if (product.quantity > 0) ...[
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      onRecordLoss();
+                    },
+                    icon: const Icon(Icons.remove_shopping_cart_outlined),
+                    label: Text(tr(context, 'Record loss')),
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
-        if (product.kind != ProductKind.service && product.quantity > 0) ...[
-          const SizedBox(height: 6),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                onRecordLoss();
-              },
-              icon: const Icon(Icons.remove_shopping_cart_outlined),
-              label: Text(tr(context, 'Record stock loss')),
-            ),
-          ),
-        ],
-        const SizedBox(height: 5),
+        const SizedBox(height: 6),
         SizedBox(
           width: double.infinity,
           child: TextButton.icon(

@@ -18,7 +18,7 @@ class ProductFormSheet extends StatefulWidget {
 }
 
 class _ProductFormSheetState extends State<ProductFormSheet> {
-  static const _units = [
+  static const _predefinedUnits = [
     'units',
     'pieces',
     'kg',
@@ -31,18 +31,24 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     'bags',
     'dozen',
     'sets',
+    'custom',
   ];
 
   late final TextEditingController _name;
   late final TextEditingController _brand;
   late final TextEditingController _quantity;
   late final TextEditingController _cost;
+  late final TextEditingController _customUnit;
   late String _category;
   late String _kind;
-  late String _unit;
+  late String _selectedUnit;
   DateTime? _expiry;
   DateTime? _service;
   DateTime? _warranty;
+
+  String? _nameError;
+  String? _quantityError;
+  String? _costError;
 
   bool get _isEditing => widget.product != null;
 
@@ -66,7 +72,16 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
       ProductKind.general => 'General',
       _ => 'Storable',
     };
-    _unit = _units.contains(product?.unit) ? product!.unit : 'units';
+
+    final initialUnit = product?.unit ?? 'units';
+    if (_predefinedUnits.contains(initialUnit) && initialUnit != 'custom') {
+      _selectedUnit = initialUnit;
+      _customUnit = TextEditingController();
+    } else {
+      _selectedUnit = 'custom';
+      _customUnit = TextEditingController(text: initialUnit);
+    }
+
     _expiry = product?.expiry;
     _service = product?.service;
     _warranty = product?.warranty;
@@ -78,189 +93,269 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     _brand.dispose();
     _quantity.dispose();
     _cost.dispose();
+    _customUnit.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          14,
-          20,
-          MediaQuery.viewInsetsOf(context).bottom + 20,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+    padding: EdgeInsets.fromLTRB(
+      20,
+      12,
+      20,
+      MediaQuery.viewInsetsOf(context).bottom + 20,
+    ),
+    child: SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Center(
-                child: Container(
-                  width: 38,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).dividerColor,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+              const SizedBox(width: 32),
+              Container(
+                width: 38,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).dividerColor,
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              const SizedBox(height: 18),
-              Text(
-                tr(
-                  context,
-                  widget.renewWarranty
-                      ? 'Renew warranty for {name}'
-                      : _isEditing
-                          ? 'Edit product'
-                          : 'Add a product',
-                  {'name': widget.product?.name ?? ''},
-                ),
-                style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
+              IconButton(
+                icon: const Icon(Icons.close_rounded, size: 20),
+                onPressed: () => Navigator.pop(context),
+                tooltip: tr(context, 'Cancel'),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _name,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  labelText: tr(context, 'Product name *'),
-                  prefixIcon: const Icon(Icons.inventory_2_outlined),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _brand,
-                textCapitalization: TextCapitalization.words,
-                decoration: InputDecoration(
-                  labelText: tr(context, 'Brand or manufacturer'),
-                  prefixIcon: const Icon(Icons.sell_outlined),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _category,
-                      isExpanded: true,
-                      decoration: InputDecoration(labelText: tr(context, 'Category')),
-                      items: const [
-                        'Pantry',
-                        'Dairy',
-                        'Health',
-                        'Household',
-                        'Appliances',
-                        'Other',
-                      ]
-                          .map((value) => DropdownMenuItem(
-                                value: value,
-                                child: Text(tr(context, value)),
-                              ))
-                          .toList(),
-                      onChanged: (value) =>
-                          setState(() => _category = value ?? 'Other'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _kind,
-                      isExpanded: true,
-                      decoration: InputDecoration(labelText: tr(context, 'Product type')),
-                      items: const ['Storable', 'Service', 'General']
-                          .map((value) => DropdownMenuItem(
-                                value: value,
-                                child: Text(tr(context, value)),
-                              ))
-                          .toList(),
-                      onChanged: (value) => setState(() {
-                        _kind = value ?? 'Storable';
-                      }),
-                    ),
-                  ),
-                ],
-              ),
-              if (_kind != 'Service') ...[
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _quantity,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: tr(context, 'Quantity'),
-                          prefixIcon: const Icon(Icons.numbers),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        controller: _cost,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: tr(context, 'Unit cost (₹)'),
-                          prefixIcon: const Icon(Icons.currency_rupee),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: _unit,
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            tr(
+              context,
+              widget.renewWarranty
+                  ? 'Renew warranty for {name}'
+                  : _isEditing
+                      ? 'Edit product'
+                      : 'Add a product',
+              {'name': widget.product?.name ?? ''},
+            ),
+            style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _name,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              labelText: tr(context, 'Product name *'),
+              prefixIcon: const Icon(Icons.inventory_2_outlined),
+              errorText: _nameError,
+            ),
+            onChanged: (_) {
+              if (_nameError != null) setState(() => _nameError = null);
+            },
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _brand,
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(
+              labelText: tr(context, 'Brand or manufacturer'),
+              prefixIcon: const Icon(Icons.sell_outlined),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _category,
                   isExpanded: true,
                   decoration: InputDecoration(
-                    labelText: tr(context, 'Unit of measure'),
-                    prefixIcon: const Icon(Icons.straighten_rounded),
+                    labelText: tr(context, 'Category'),
                   ),
-                  items: _units
-                      .map((unit) => DropdownMenuItem(
-                            value: unit,
-                            child: Text(tr(context, unit)),
+                  items: const [
+                    'Pantry',
+                    'Dairy',
+                    'Health',
+                    'Household',
+                    'Appliances',
+                    'Other',
+                  ]
+                      .map((value) => DropdownMenuItem(
+                            value: value,
+                            child: Text(tr(context, value)),
                           ))
                       .toList(),
-                  onChanged: (value) => setState(() => _unit = value ?? 'units'),
+                  onChanged: (value) =>
+                      setState(() => _category = value ?? 'Other'),
                 ),
-              ],
-              if (_kind == 'Storable') ...[
-                const SizedBox(height: 8),
-                _dateButton(
-                  label: 'Choose expiry date',
-                  date: _expiry,
-                  onTap: () => _pickDate(
-                    _expiry,
-                    (date) => _expiry = date,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _kind,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: tr(context, 'Product type'),
+                  ),
+                  items: const ['Storable', 'Service', 'General']
+                      .map((value) => DropdownMenuItem(
+                            value: value,
+                            child: Text(tr(context, value)),
+                          ))
+                      .toList(),
+                  onChanged: (value) => setState(() {
+                    _kind = value ?? 'Storable';
+                  }),
+                ),
+              ),
+            ],
+          ),
+          if (_kind != 'Service') ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _quantity,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: tr(context, 'Quantity *'),
+                      prefixIcon: const Icon(Icons.numbers),
+                      errorText: _quantityError,
+                    ),
+                    onChanged: (_) {
+                      if (_quantityError != null) {
+                        setState(() => _quantityError = null);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _cost,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: tr(context, 'Unit cost (₹)'),
+                      prefixIcon: const Icon(Icons.currency_rupee),
+                      errorText: _costError,
+                    ),
+                    onChanged: (_) {
+                      if (_costError != null) {
+                        setState(() => _costError = null);
+                      }
+                    },
                   ),
                 ),
               ],
-              if (_kind == 'Service') ...[
-                const SizedBox(height: 8),
-                _dateButton(
-                  label: 'Choose next service date',
-                  date: _service,
-                  onTap: () => _pickDate(
-                    _service,
-                    (date) => _service = date,
-                  ),
+            ),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedUnit,
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: tr(context, 'Unit of measure (UOM)'),
+                prefixIcon: const Icon(Icons.straighten_rounded),
+              ),
+              items: _predefinedUnits
+                  .map((unit) => DropdownMenuItem(
+                        value: unit,
+                        child: Text(
+                          unit == 'custom'
+                              ? tr(context, 'Custom unit...')
+                              : tr(context, unit),
+                        ),
+                      ))
+                  .toList(),
+              onChanged: (value) => setState(() {
+                _selectedUnit = value ?? 'units';
+              }),
+            ),
+            if (_selectedUnit == 'custom') ...[
+              const SizedBox(height: 10),
+              TextField(
+                controller: _customUnit,
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  labelText: tr(context, 'Enter custom UOM'),
+                  hintText: 'e.g. cans, rolls, strips',
+                  prefixIcon: const Icon(Icons.edit_note_rounded),
                 ),
-                const SizedBox(height: 8),
-                _dateButton(
-                  label: widget.renewWarranty
-                      ? 'Choose new warranty expiry date'
-                      : 'Choose warranty expiry date',
-                  date: _warranty,
-                  onTap: () => _pickDate(
-                    _warranty,
-                    (date) => _warranty = date,
-                  ),
+              ),
+            ],
+          ],
+          if (_kind == 'Storable') ...[
+            const SizedBox(height: 10),
+            _dateButton(
+              label: 'Choose expiry date',
+              date: _expiry,
+              onTap: () => _pickDate(
+                _expiry,
+                (date) => _expiry = date,
+              ),
+            ),
+          ],
+          if (_kind == 'Service') ...[
+            const SizedBox(height: 10),
+            _dateButton(
+              label: 'Choose next service date',
+              date: _service,
+              onTap: () => _pickDate(
+                _service,
+                (date) => _service = date,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _dateButton(
+              label: widget.renewWarranty
+                  ? 'Choose new warranty expiry date'
+                  : 'Choose warranty expiry date',
+              date: _warranty,
+              onTap: () => _pickDate(
+                _warranty,
+                (date) => _warranty = date,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _dateButton(
+              label: 'Choose expiration / contract end date',
+              date: _expiry,
+              onTap: () => _pickDate(
+                _expiry,
+                (date) => _expiry = date,
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _cost,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: tr(context, 'Service / Contract cost (₹)'),
+                prefixIcon: const Icon(Icons.currency_rupee),
+                errorText: _costError,
+              ),
+              onChanged: (_) {
+                if (_costError != null) setState(() => _costError = null);
+              },
+            ),
+          ],
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(tr(context, 'Cancel')),
                 ),
-              ],
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: FilledButton.icon(
                   onPressed: _save,
                   icon: Icon(_isEditing ? Icons.save_rounded : Icons.add_rounded),
@@ -278,8 +373,10 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
               ),
             ],
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 
   Widget _dateButton({
     required String label,
@@ -294,7 +391,9 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
           label: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              date == null ? tr(context, label) : localizedFullDate(context, date),
+              date == null
+                  ? tr(context, label)
+                  : localizedFullDate(context, date),
               textAlign: TextAlign.left,
             ),
           ),
@@ -315,19 +414,55 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
   }
 
   void _save() {
-    final quantity = int.tryParse(_quantity.text);
-    if (_name.text.trim().isEmpty ||
-        (_kind != 'Service' && (quantity == null || quantity < 0))) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr(context, 'Add a name and a valid quantity.'))),
-      );
-      return;
+    var hasError = false;
+
+    if (_name.text.trim().isEmpty) {
+      setState(() => _nameError = tr(context, 'Product name is required.'));
+      hasError = true;
     }
+
+    int? quantity;
+    if (_kind != 'Service') {
+      quantity = int.tryParse(_quantity.text.trim());
+      if (quantity == null || quantity < 0) {
+        setState(() {
+          _quantityError = tr(context, 'Enter a valid non-negative quantity.');
+        });
+        hasError = true;
+      }
+    } else {
+      quantity = 0;
+    }
+
+    double cost = 0;
+    if (_cost.text.trim().isNotEmpty) {
+      final parsedCost = double.tryParse(_cost.text.trim());
+      if (parsedCost == null || parsedCost < 0) {
+        setState(() => _costError = tr(context, 'Cost cannot be negative.'));
+        hasError = true;
+      } else {
+        cost = parsedCost;
+      }
+    }
+
+    if (hasError) return;
+
     final kind = switch (_kind) {
       'Service' => ProductKind.service,
       'General' => ProductKind.general,
       _ => ProductKind.storable,
     };
+
+    String finalUnit;
+    if (kind == ProductKind.service) {
+      finalUnit = 'unit';
+    } else if (_selectedUnit == 'custom') {
+      final custom = _customUnit.text.trim();
+      finalUnit = custom.isNotEmpty ? custom : 'units';
+    } else {
+      finalUnit = _selectedUnit;
+    }
+
     final old = widget.product;
     Navigator.pop(
       context,
@@ -336,14 +471,12 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
         name: _name.text.trim(),
         brand: _brand.text.trim().isEmpty ? 'Unbranded' : _brand.text.trim(),
         category: _category,
-        quantity: kind == ProductKind.service ? 0 : quantity!,
-        unit: kind == ProductKind.service ? 'unit' : _unit,
-        expiry: kind == ProductKind.storable ? _expiry : null,
+        quantity: quantity ?? 0,
+        unit: finalUnit,
+        expiry: _expiry,
         service: kind == ProductKind.service ? _service : null,
         warranty: kind == ProductKind.service ? _warranty : null,
-        cost: kind == ProductKind.service
-            ? 0
-            : double.tryParse(_cost.text) ?? 0,
+        cost: cost,
         kind: kind,
       ),
     );

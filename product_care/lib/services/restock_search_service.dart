@@ -9,9 +9,12 @@ class RestockSearchService {
   const RestockSearchService();
 
   String buildQuery(Product product) {
+    final cleanBrand = product.brand.trim();
+    final hasBrand = cleanBrand.isNotEmpty &&
+        cleanBrand.toLowerCase() != 'unbranded';
     final parts = <String>[
       product.name,
-      product.brand,
+      if (hasBrand) cleanBrand,
     ].where((part) => part.trim().isNotEmpty);
     final seen = <String>{};
     return parts

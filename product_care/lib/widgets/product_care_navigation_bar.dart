@@ -7,11 +7,13 @@ class ProductCareNavigationBar extends StatelessWidget {
   const ProductCareNavigationBar({
     required this.selectedIndex,
     required this.onSelected,
+    this.onScan,
     super.key,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onSelected;
+  final VoidCallback? onScan;
 
   static const _items = [
     (Icons.grid_view_rounded, 'Home', Color(0xFF278765)),
@@ -25,8 +27,8 @@ class ProductCareNavigationBar extends StatelessWidget {
   Widget build(BuildContext context) => SafeArea(
     top: false,
     child: Container(
-      margin: const EdgeInsets.fromLTRB(14, 7, 14, 9),
-      padding: const EdgeInsets.fromLTRB(5, 8, 5, 7),
+      margin: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+      padding: const EdgeInsets.fromLTRB(4, 7, 4, 6),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(30),
@@ -44,9 +46,61 @@ class ProductCareNavigationBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          for (var index = 0; index < _items.length; index++)
-            Expanded(child: _destination(context, index)),
+          Expanded(child: _destination(context, 0)),
+          Expanded(child: _destination(context, 1)),
+          if (onScan != null) Expanded(child: _scanAction(context)),
+          Expanded(child: _destination(context, 2)),
+          Expanded(child: _destination(context, 3)),
+          Expanded(child: _destination(context, 4)),
         ],
+      ),
+    ),
+  );
+
+  Widget _scanAction(BuildContext context) => Semantics(
+    button: true,
+    label: tr(context, 'Scan item'),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: onScan,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 1),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: brandGreen,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: brandGreen.withValues(alpha: 0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.qr_code_scanner_rounded,
+                size: 20,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              tr(context, 'Scan'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: brandGreen,
+              ),
+            ),
+          ],
+        ),
       ),
     ),
   );
