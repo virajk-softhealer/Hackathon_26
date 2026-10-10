@@ -249,6 +249,19 @@ class ProductCareLocalizations {
       'Select batch': 'बैच चुनें',
       'New batch expiry date': 'नए बैच की समाप्ति तिथि',
       'Batch expiry': 'बैच समाप्ति',
+      'Multi-Barcode Scanner': 'मल्टी-बारकोड स्कैनर',
+      'Scan up to multiple barcodes at once': 'एक साथ कई बारकोड स्कैन करें',
+      'Align barcodes inside frame': 'बारकोड को फ्रेम के अंदर रखें',
+      '{count} barcodes detected': '{count} बारकोड मिले',
+      'Scanned items ({count})': 'स्कैन किए गए आइटम ({count})',
+      'Clear all': 'सभी हटाएं',
+      'Point camera at barcodes to detect them simultaneously.':
+          'एक साथ स्कैन करने के लिए कैमरे को बारकोड के सामने रखें।',
+      'Confirm & Add ({count} items)': 'पुष्टि करें और जोड़ें ({count} आइटम)',
+      '{count} scanned items processed ({existing} added to stock, {newItems} new products created).':
+          '{count} स्कैन आइटम प्रोसेस किए गए ({existing} स्टॉक में जोड़े, {newItems} नए उत्पाद बनाए)।',
+      'Flashlight': 'टॉर्च',
+      'Flip camera': 'कैमरा बदलें',
       'Restock': 'पुनः स्टॉक करें',
       'Record loss': 'हानि दर्ज करें',
       'Restore a backup received from another device or user':
@@ -552,6 +565,19 @@ class ProductCareLocalizations {
       'Select batch': 'બેચ પસંદ કરો',
       'New batch expiry date': 'નવી બેચની સમાપ્તિ તારીખ',
       'Batch expiry': 'બેચ સમાપ્તિ',
+      'Multi-Barcode Scanner': 'મલ્ટી-બારકોડ સ્કેનર',
+      'Scan up to multiple barcodes at once': 'એક સાથે અનેક બારકોડ સ્કેન કરો',
+      'Align barcodes inside frame': 'બારકોડને ફ્રેમની અંદર રાખો',
+      '{count} barcodes detected': '{count} બારકોડ મળ્યા',
+      'Scanned items ({count})': 'સ્કેન કરેલ આઇટમ્સ ({count})',
+      'Clear all': 'બધા કાઢી નાખો',
+      'Point camera at barcodes to detect them simultaneously.':
+          'એક સાથે સ્કેન કરવા માટે કેમેરાને બારકોડ સામે રાખો.',
+      'Confirm & Add ({count} items)': 'ખાતરી કરો અને ઉમેરો ({count} આઇટમ)',
+      '{count} scanned items processed ({existing} added to stock, {newItems} new products created).':
+          '{count} સ્કેન આઇટમ્સ પ્રોસેસ થયા ({existing} સ્ટોકમાં ઉમેરાયા, {newItems} નવા ઉત્પાદનો બન્યા).',
+      'Flashlight': 'ટોર્ચ',
+      'Flip camera': 'કેમેરા બદલો',
       'Restock': 'ફરીથી સ્ટોક કરો',
       'Record loss': 'નુકસાન નોંધો',
       'Restore a backup received from another device or user':

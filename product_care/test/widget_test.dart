@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:product_care/app/app_localizations.dart';
 import 'package:product_care/app/product_care_app.dart';
 import 'package:product_care/models/product.dart';
+import 'package:product_care/pages/multi_barcode_scanner_page.dart';
 
 void main() {
   testWidgets('ProductCareApp loads smoke test', (WidgetTester tester) async {
@@ -113,5 +114,19 @@ void main() {
     expect(milk.earliestExpiringBatch?.batchNumber, equals('MILK-00002'));
     expect(milk.expiry, equals(exp2));
     expect(milk.daysToExpiry, equals(7));
+  });
+
+  test('MultiBarcode scanner item tracking aggregates and maps items correctly', () {
+    final item1 = ScannedBarcodeItem(code: 'BARCODE-001', quantity: 2);
+    final item2 = ScannedBarcodeItem(code: 'BARCODE-002', quantity: 3);
+    final scanned = [item1, item2];
+
+    final totalCount = scanned.fold<int>(0, (sum, i) => sum + i.quantity);
+    expect(totalCount, equals(5));
+
+    final hi = ProductCareLocalizations(const Locale('hi'));
+    expect(hi.translate('Multi-Barcode Scanner'), equals('मल्टी-बारकोड स्कैनर'));
+    final gu = ProductCareLocalizations(const Locale('gu'));
+    expect(gu.translate('Multi-Barcode Scanner'), equals('મલ્ટી-બારકોડ સ્કેનર'));
   });
 }

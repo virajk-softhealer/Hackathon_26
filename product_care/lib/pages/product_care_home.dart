@@ -24,6 +24,7 @@ import '../widgets/restock_search_sheet.dart';
 import 'alerts_page.dart';
 import 'calendar_page.dart';
 import 'dashboard_page.dart';
+import 'multi_barcode_scanner_page.dart';
 import 'products_page.dart';
 import 'settings_page.dart';
 
@@ -96,7 +97,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         onOpenAlerts: () => _selectTab(2),
         onOpenProduct: _openProduct,
         onAddProduct: _addProduct,
-        onScan: _showScanInfo,
+        onScan: _openMultiBarcodeScanner,
       ),
       ProductsPage(
         key: ValueKey(_productFilter),
@@ -158,7 +159,7 @@ class _ProductCareHomeState extends State<ProductCareHome> {
         bottomNavigationBar: ProductCareNavigationBar(
           selectedIndex: _selectedTab,
           onSelected: _selectTab,
-          onScan: _showScanInfo,
+          onScan: _openMultiBarcodeScanner,
         ),
       ),
     );
@@ -381,30 +382,76 @@ class _ProductCareHomeState extends State<ProductCareHome> {
     );
   }
 
-  void _showScanInfo() {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(tr(context, 'Scan a product')),
-        content: Text(
-          tr(
-            context,
-            'Camera and product recognition are not connected yet. You can add product details manually.',
-          ),
+  Future<void> _openMultiBarcodeScanner() async {
+    final scannedItems = await Navigator.push<List<ScannedBarcodeItem>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MultiBarcodeScannerPage(
+          existingProducts: _store.products,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(tr(context, 'Close')),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              _addProduct();
-            },
-            child: Text(tr(context, 'Enter manually')),
-          ),
-        ],
+      ),
+    );
+
+    if (scannedItems == null || scannedItems.isEmpty || !mounted) return;
+
+    var addedToExisting = 0;
+    var newProductsCreated = 0;
+
+    for (final item in scannedItems) {
+      if (item.matchedProduct != null) {
+        final product = item.matchedProduct!;
+        if (product.kind == ProductKind.storable) {
+          if (product.batches.isNotEmpty) {
+            product.batches.last.quantity += item.quantity;
+          } else {
+            product.batches.add(ProductBatch(
+              batchNumber: generateNextBatchNumber(product.name, []),
+              quantity: item.quantity,
+              expiry: product.expiry,
+            ));
+          }
+        } else {
+          product.quantity += item.quantity;
+        }
+        addedToExisting += item.quantity;
+      } else {
+        final newBatchCode = generateNextBatchNumber(item.code, []);
+        final newProd = Product(
+          name: item.code,
+          brand: '',
+          category: 'Other',
+          quantity: item.quantity,
+          unit: 'units',
+          kind: ProductKind.storable,
+          expiry: DateTime.now().add(const Duration(days: 30)),
+          batches: [
+            ProductBatch(
+              batchNumber: newBatchCode,
+              quantity: item.quantity,
+              expiry: DateTime.now().add(const Duration(days: 30)),
+            ),
+          ],
+        );
+        _store.addProduct(newProd);
+        newProductsCreated++;
+      }
+    }
+
+    setState(() {});
+    await _persistStore();
+    if (!mounted) return;
+    await _rescheduleNotifications();
+    if (!mounted) return;
+
+    _showMessage(
+      tr(
+        context,
+        '{count} scanned items processed ({existing} added to stock, {newItems} new products created).',
+        {
+          'count': scannedItems.length,
+          'existing': addedToExisting,
+          'newItems': newProductsCreated,
+        },
       ),
     );
   }
